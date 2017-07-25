@@ -1,4 +1,4 @@
-package contestbot;
+package de.elite12.contestbot.tests;
 
 import static org.junit.Assert.*;
 
