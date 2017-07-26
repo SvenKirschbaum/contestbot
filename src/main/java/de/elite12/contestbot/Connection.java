@@ -71,4 +71,8 @@ public class Connection extends WebSocketClient {
 		this.send("PASS " + ContestBot.getInstance().getConfig("oauth"));
         this.send("NICK " + ContestBot.getInstance().getConfig("login"));
 	}
+	
+	public void sendChatMessage (String message) {
+		this.send("PRIVMSG #" + ContestBot.getInstance().getConfig("channelname") + " :This is a sample message");
+	}
 }
