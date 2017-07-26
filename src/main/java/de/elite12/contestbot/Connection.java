@@ -10,7 +10,9 @@ import java.security.NoSuchAlgorithmException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.Priority;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.handshake.ServerHandshake;
@@ -44,7 +46,6 @@ public class Connection extends WebSocketClient {
 		Logger.getLogger(Connection.class).warn("Lost connection. Code ["+code+"] Reason ["+reason+"] Remote["+remote+"]");
 		//TODO: reconnect
 		System.exit(1);
-		
 	}
 
 	@Override

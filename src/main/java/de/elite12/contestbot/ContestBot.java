@@ -15,13 +15,13 @@ import org.apache.log4j.Logger;
 
 public class ContestBot{
 
-	public Properties config;
+	private Properties config;
 	private static Logger logger = Logger.getLogger(ContestBot.class);
 	private Connection connection;
 	private MessageParser parser;
 	private Contest contest;
 	
-	public static ContestBot instance;
+	private static ContestBot instance;
 	
 
 	public ContestBot() {
@@ -30,7 +30,7 @@ public class ContestBot{
 		File propertiesFile = new File("config.properties");
 		config = new Properties();
 		try (
-				BufferedInputStream bis = new BufferedInputStream(new FileInputStream(propertiesFile))
+			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(propertiesFile))
 		) {
 			config.load(bis);
 			bis.close();
