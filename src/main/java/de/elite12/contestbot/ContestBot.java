@@ -4,16 +4,28 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Properties;
+import java.util.Scanner;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.log4j.Logger;
 
 public class ContestBot extends Thread {
 
-	private Properties config;
+	public Properties config;
 	private static Logger logger = Logger.getLogger(ContestBot.class);
+	private Connection connection;
+	private MessageParser parser;
+	
+	public static ContestBot instance;
+	
 
 	public ContestBot() {
+		instance = this;
+		
 		File propertiesFile = new File("config.properties");
 		config = new Properties();
 		try (
@@ -25,10 +37,37 @@ public class ContestBot extends Thread {
 			logger.fatal("Can not read config", e);
 			System.exit(1);
 		}
+		
+		this.parser = new MessageParser();
+		this.parser.start();
+		
+		try {
+			connection = new Connection();
+		} catch (URISyntaxException e) {
+			logger.fatal("Can not use parameter ircserver", e);
+			System.exit(1);
+		}
+		connection.connect();
 	}
 
 	@Override
 	public void run() {
-
+		while(true);
+	}
+	
+	public String getConfig(String key) {
+		return config.getProperty(key);
+	}
+	
+	public static ContestBot getInstance() {
+		return instance;
+	}
+	
+	public Connection getConnection() {
+		return this.connection;
+	}
+	
+	public MessageParser getParser() {
+		return this.parser;
 	}
 }
