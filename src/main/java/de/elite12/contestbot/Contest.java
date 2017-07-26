@@ -35,9 +35,11 @@ public class Contest {
 		map = new ConcurrentHashMap<>(100);
 	}
 	
-	public void handleMessage(Message m) {
+	public void handleMessage(Message m, boolean whisper) {
 		if(contestrunning && open) {
-			this.addEntry(m.getUsername(),m.getMessage());
+			if(this.addEntry(m.getUsername(),m.getMessage()) && whisper) {
+				ContestBot.getInstance().getConnection().sendPrivatMessage(m.getUsername().toLowerCase(), "Wette: ["+m.getMessage()+ "] confirmed!");
+			}
 		}
 		if(m.getMessage().startsWith("!") && this.ispermitted(m)) {
 			String[] split = m.getMessage().split(" ", 2);
@@ -71,11 +73,11 @@ public class Contest {
 		
 		timer = scheduler.schedule(() -> {
 			this.open = false;
-			ContestBot.getInstance().getConnection().sendChatMessage("Die Einträge sind nun abgeschlossen");
-			logger.info("Die Einträge sind nun abgeschlossen");
+			ContestBot.getInstance().getConnection().sendChatMessage("Einsendeschluss: "+this.map.size()+ " Teilnehmer");
+			logger.info("Einsendeschluss: "+this.map.size()+ " Teilnehmer");
 		}, 3, TimeUnit.MINUTES);
 		
-		ContestBot.getInstance().getConnection().sendChatMessage("Eine Wette wurde gestartet");
+		ContestBot.getInstance().getConnection().sendChatMessage("Eine Wette wurde gestartet: Wann stirbt Janu?");
 		ContestBot.getInstance().getConnection().sendChatMessage("Zum mitwetten schreibt eine Uhrzeit im Format 'HH:mm' oder 'win'");
 		ContestBot.getInstance().getConnection().sendChatMessage("Die Einträge schließen in drei Minuten");
 		logger.info("Wette gestartet");
@@ -146,7 +148,7 @@ public class Contest {
 		return m.getTags().containsKey("mod")?m.getTags().get("mod").equals("1"):false;
 	}
 
-	private void addEntry(String username, String message) {
+	private boolean addEntry(String username, String message) {
 		Matcher m = entrypattern.matcher(message);
 		if(m.matches()) {
 			int hours = Integer.parseInt(m.group(1));
@@ -159,9 +161,15 @@ public class Contest {
 				
 				this.map.put(username,entrytime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 			}
+			return true;
 		}
-		else if(message.equalsIgnoreCase("win")) this.map.put(username, "win");
-		
+		else if(message.equalsIgnoreCase("win")) {
+			this.map.put(username, "win");
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
 	
 	private void printWinner(Set<String> set,Duration d) {

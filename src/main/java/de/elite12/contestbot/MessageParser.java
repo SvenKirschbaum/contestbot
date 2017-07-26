@@ -121,6 +121,7 @@ public class MessageParser extends Thread {
 		//Request Tags functionality and join specified Channel
 		map.put("001", (c) -> {
 			ContestBot.getInstance().getConnection().send("CAP REQ :twitch.tv/tags");
+			ContestBot.getInstance().getConnection().send("CAP REQ :twitch.tv/commands");
 			ContestBot.getInstance().getConnection().send("JOIN #"+ContestBot.getInstance().getConfig("channelname"));
 		});
 		
@@ -139,6 +140,14 @@ public class MessageParser extends Thread {
 		//Requested CAP
 		map.put("CAP", donothing);
 		
+		//Ignore new commands
+		map.put("USERSTATE", donothing); //When a user joins a channel or sends a PRIVMSG to a channel.
+		map.put("ROOMSTATE", donothing); //When a user joins a channel or a room setting is changed.
+		map.put("CLEARCHAT", donothing); //Temporary or permanent ban on a channel.
+		map.put("HOSTTARGET", donothing); //Host starts or stops a message.
+		map.put("NOTICE", donothing); //General notices from the server.
+		map.put("USERNOTICE", donothing); //On resubscription to a channel.
+		
 		//Ping from Server
 		//Reply with PONG
 		map.put("PING", (c) -> ContestBot.getInstance().getConnection().send("PONG :tmi.twitch.tv"));
@@ -153,7 +162,17 @@ public class MessageParser extends Thread {
 			m.setTags(c.getTags());
 			
 			//TODO: Dynamic observers
-			ContestBot.getInstance().getContest().handleMessage(m);
+			ContestBot.getInstance().getContest().handleMessage(m, false);
+		});
+		map.put("WHISPER", (c) -> {
+			Message m = new Message();
+			m.setUsername(c.getPrefix().split("@")[0].split("!")[0]);
+			//Ignoring Channel name, since whispers have no channel
+			m.setMessage(c.getParams().split(" :",2)[1]);
+			m.setTags(c.getTags());
+			
+			//TODO: Dynamic observers
+			ContestBot.getInstance().getContest().handleMessage(m, true);
 		});
 		
 		commandmap = Collections.unmodifiableMap(map);
