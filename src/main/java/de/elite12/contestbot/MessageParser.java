@@ -152,10 +152,8 @@ public class MessageParser extends Thread {
 			m.setMessage(c.getParams().split(" :",2)[1]);
 			m.setTags(c.getTags());
 			
-			logger.info(m);
-			
 			//TODO: Dynamic observers
-			//ContestBot.getInstance().getContest().handleMessage(m);
+			ContestBot.getInstance().getContest().handleMessage(m);
 		});
 		
 		commandmap = Collections.unmodifiableMap(map);

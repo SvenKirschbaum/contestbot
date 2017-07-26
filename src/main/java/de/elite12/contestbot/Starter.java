@@ -4,7 +4,6 @@ public class Starter {
 
 	public static void main(String[] args) {
 		ContestBot c = new ContestBot();
-		c.run();
 	}
 
 }

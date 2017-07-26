@@ -13,12 +13,13 @@ import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.log4j.Logger;
 
-public class ContestBot extends Thread {
+public class ContestBot{
 
 	public Properties config;
 	private static Logger logger = Logger.getLogger(ContestBot.class);
 	private Connection connection;
 	private MessageParser parser;
+	private Contest contest;
 	
 	public static ContestBot instance;
 	
@@ -41,6 +42,8 @@ public class ContestBot extends Thread {
 		this.parser = new MessageParser();
 		this.parser.start();
 		
+		this.contest = new Contest();
+		
 		try {
 			connection = new Connection();
 		} catch (URISyntaxException e) {
@@ -48,11 +51,6 @@ public class ContestBot extends Thread {
 			System.exit(1);
 		}
 		connection.connect();
-	}
-
-	@Override
-	public void run() {
-		while(true);
 	}
 	
 	public String getConfig(String key) {
@@ -69,5 +67,9 @@ public class ContestBot extends Thread {
 	
 	public MessageParser getParser() {
 		return this.parser;
+	}
+	
+	public Contest getContest() {
+		return this.contest;
 	}
 }

@@ -73,6 +73,6 @@ public class Connection extends WebSocketClient {
 	}
 	
 	public void sendChatMessage (String message) {
-		this.send("PRIVMSG #" + ContestBot.getInstance().getConfig("channelname") + " :This is a sample message");
+		this.send("PRIVMSG #" + ContestBot.getInstance().getConfig("channelname") + " :"+message);
 	}
 }
