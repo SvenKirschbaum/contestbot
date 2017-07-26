@@ -73,11 +73,11 @@ public class Contest {
 			this.open = false;
 			ContestBot.getInstance().getConnection().sendChatMessage("Die Einträge sind nun abgeschlossen");
 			logger.info("Die Einträge sind nun abgeschlossen");
-		}, 1, TimeUnit.MINUTES);
+		}, 3, TimeUnit.MINUTES);
 		
 		ContestBot.getInstance().getConnection().sendChatMessage("Eine Wette wurde gestartet");
 		ContestBot.getInstance().getConnection().sendChatMessage("Zum mitwetten schreibt eine Uhrzeit im Format 'HH:mm' oder 'win'");
-		ContestBot.getInstance().getConnection().sendChatMessage("Die Einträge schließen in einer Minute");
+		ContestBot.getInstance().getConnection().sendChatMessage("Die Einträge schließen in drei Minuten");
 		logger.info("Wette gestartet");
 	}
 	
@@ -104,9 +104,7 @@ public class Contest {
 			return;
 		}
 		if(open) {
-			ContestBot.getInstance().getConnection().sendChatMessage("Der Anmeldezeitraum ist noch nicht abgelaufen");
-			logger.info("Kann die Wette nicht beenden: Der Anmeldezeitraum läuft noch");
-			return;
+			timer.cancel(false);
 		}
 		
 		if(b) {
