@@ -50,7 +50,7 @@ public class Contest implements EventObserver{
 		this.database = new SQLite();
 	}
 
-	public void handleMessage(Message m, boolean whisper) {
+	public synchronized void handleMessage(Message m, boolean whisper) {
 		if (contestrunning && open) {
 			if (this.addEntry(m.getUsername(), m.getMessage()) && whisper) {
 				ContestBot.getInstance().getConnection().sendPrivatMessage(m.getUsername().toLowerCase(),

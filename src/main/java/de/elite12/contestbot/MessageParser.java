@@ -24,12 +24,7 @@ import de.elite12.contestbot.Model.Message;
 public class MessageParser implements Runnable {
 	private static Logger logger = Logger.getLogger(MessageParser.class);
 	private static Set<EventObserverEntry> observers = new HashSet<>();
-	
-	private BlockingQueue<String> queue;
-	
-	public MessageParser() {
-		this.queue = new ArrayBlockingQueue<>(500);
-	}
+	private static BlockingQueue<String> queue = new ArrayBlockingQueue<>(500);
 	
 	@Override
 	public void run() {
@@ -109,9 +104,9 @@ public class MessageParser implements Runnable {
 		return map;
 	}
 
-	public void queueElement(String e) throws BufferOverflowException{
+	public static void queueElement(String e) throws BufferOverflowException{
 		try {
-			if(!this.queue.offer(e, 500, TimeUnit.MILLISECONDS)) {
+			if(!queue.offer(e, 500, TimeUnit.MILLISECONDS)) {
 				throw new BufferOverflowException();
 			}
 		} catch (InterruptedException e1) {

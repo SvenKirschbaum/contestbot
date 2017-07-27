@@ -57,7 +57,7 @@ public class Connection extends WebSocketClient {
 		for(String s:messages) {
 			try {
 				if(!s.isEmpty())
-					ContestBot.getInstance().getParser().queueElement(s);
+					MessageParser.queueElement(s);
 			}
 			catch(BufferOverflowException e) {
 				Logger.getLogger(Connection.class).warn("Dropped Message: "+s,e);

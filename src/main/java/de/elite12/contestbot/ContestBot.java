@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.log4j.Logger;
 import org.reflections.Reflections;
@@ -22,7 +24,7 @@ public class ContestBot{
 	private Properties config;
 	private static Logger logger = Logger.getLogger(ContestBot.class);
 	private Connection connection;
-	private MessageParser parser;
+	private ExecutorService threadPool;
 	
 	private static ContestBot instance;
 	
@@ -42,8 +44,10 @@ public class ContestBot{
 			System.exit(1);
 		}
 		
-		this.parser = new MessageParser();
-		new Thread(this.parser).start();
+		this.threadPool = Executors.newFixedThreadPool(Integer.parseInt(this.config.getProperty("threads", "2")));
+		for(int i = 0; i < Integer.parseInt(this.config.getProperty("threads", "2")); i++) {
+			this.threadPool.execute(new MessageParser());
+		}
 		
 		try {
 			connection = new Connection();
@@ -84,9 +88,5 @@ public class ContestBot{
 	
 	public Connection getConnection() {
 		return this.connection;
-	}
-	
-	public MessageParser getParser() {
-		return this.parser;
 	}
 }
