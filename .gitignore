@@ -3,3 +3,4 @@
 /.settings/
 /target/
 /config.properties
+/points.db
