@@ -1,4 +1,4 @@
-package de.elite12.contestbot;
+package de.elite12.contestbot.modules;
 
 import java.sql.SQLException;
 import java.time.Duration;
@@ -17,9 +17,19 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
+import de.elite12.contestbot.ContestBot;
+import de.elite12.contestbot.Model.Autoload;
+import de.elite12.contestbot.Model.Event;
+import de.elite12.contestbot.Model.EventObserver;
+import de.elite12.contestbot.Model.EventTypes;
+import de.elite12.contestbot.Model.Events;
+import de.elite12.contestbot.Model.Leaderboard;
 import de.elite12.contestbot.Model.Message;
+import de.elite12.contestbot.SQLite;
 
-public class Contest {
+@Autoload
+@EventTypes({ Events.MESSAGE, Events.WHISPER })
+public class Contest implements EventObserver{
 
 	private SQLite database;
 
@@ -30,7 +40,8 @@ public class Contest {
 
 	boolean contestrunning = false;
 	boolean open = false;
-	ScheduledFuture<?> timer = null;
+	boolean leaderboard = false;
+	ScheduledFuture<?> bettimer = null;
 	ConcurrentHashMap<String, String> map;
 
 	public Contest() {
@@ -71,6 +82,19 @@ public class Contest {
 					sendPoints(m.getUsername());
 					break;
 				}
+				case "!leaderboard" : {
+					if(whisper) {
+						printLeaderboard(m.getUsername());
+					}
+					else if(!leaderboard) {
+						printLeaderboard();
+						this.leaderboard = true;
+						this.scheduler.schedule(() -> {
+							this.leaderboard = false;
+						}, 5, TimeUnit.MINUTES);
+					}
+					break;
+				}
 			}
 		}
 	}
@@ -85,7 +109,7 @@ public class Contest {
 		this.contestrunning = true;
 		this.open = true;
 
-		timer = scheduler.schedule(() -> {
+		bettimer = scheduler.schedule(() -> {
 			this.open = false;
 			ContestBot.getInstance().getConnection()
 					.sendChatMessage("Einsendeschluss: " + this.map.size() + " Teilnehmer");
@@ -106,8 +130,8 @@ public class Contest {
 			return;
 		}
 
-		if (timer != null)
-			timer.cancel(false);
+		if (bettimer != null)
+			bettimer.cancel(false);
 		this.open = false;
 		this.contestrunning = false;
 		this.map.clear();
@@ -123,7 +147,7 @@ public class Contest {
 			return;
 		}
 		if (open) {
-			timer.cancel(false);
+			bettimer.cancel(false);
 		}
 
 		if (win) {
@@ -165,10 +189,42 @@ public class Contest {
 		logger.debug("Sending points to " + username);
 		try {
 			int points = this.database.getPoints(username);
-			ContestBot.getInstance().getConnection().sendPrivatMessage(username,
-					"Du hast aktuell " + points + " Punkte!");
+			if(points != 1) {
+				ContestBot.getInstance().getConnection().sendPrivatMessage(username,
+						"Du hast aktuell " + points + " Punkte!");
+			}
+			else {
+				ContestBot.getInstance().getConnection().sendPrivatMessage(username,
+						"Du hast aktuell einen Punkt!");
+			}
 		} catch (SQLException e) {
 			logger.error("Unable to get Points", e);
+		}
+	}
+	
+	private void printLeaderboard() {
+		try {
+			Leaderboard l = this.database.getLeaderboard(3);
+			ContestBot.getInstance().getConnection().sendChatMessage("Die Top 3:");
+			for (int i = 0; i < l.getUsernames().length; i++) {
+				ContestBot.getInstance().getConnection().sendChatMessage(
+						"" + (i + 1) + ". " + l.getUsernames()[i] + ": " + l.getPoints()[i] + (l.getPoints()[i]==1?" Punkt":" Punkte"));
+			}
+		} catch (SQLException e) {
+			logger.error("Could not get Leaderboard", e);
+		}
+	}
+
+	private void printLeaderboard(String username) {
+		try {
+			Leaderboard l = this.database.getLeaderboard(3);
+			ContestBot.getInstance().getConnection().sendPrivatMessage(username, "Die Top 3:");
+			for (int i = 0; i < l.getUsernames().length; i++) {
+				ContestBot.getInstance().getConnection().sendPrivatMessage(username,
+						"" + (i + 1) + ". " + l.getUsernames()[i] + ": " + l.getPoints()[i] + (l.getPoints()[i]==1?" Punkt":" Punkte"));
+			}
+		} catch (SQLException e) {
+			logger.error("Could not get Leaderboard", e);
 		}
 	}
 
@@ -256,5 +312,10 @@ public class Contest {
 			ContestBot.getInstance().getConnection().sendChatMessage("Der Abstand beträgt " + abstand + " Minuten");
 		}
 		}
+	}
+
+	@Override
+	public void onEvent(Events type, Event e) {
+		this.handleMessage((Message) e, type==Events.WHISPER);
 	}
 }

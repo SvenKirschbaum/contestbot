@@ -2,8 +2,11 @@ package de.elite12.contestbot;
 
 import java.nio.BufferOverflowException;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -12,11 +15,18 @@ import java.util.function.Consumer;
 import org.apache.log4j.Logger;
 
 import de.elite12.contestbot.Model.Command;
+import de.elite12.contestbot.Model.Event;
+import de.elite12.contestbot.Model.EventObserver;
+import de.elite12.contestbot.Model.EventObserverEntry;
+import de.elite12.contestbot.Model.Events;
 import de.elite12.contestbot.Model.Message;
 
-public class MessageParser extends Thread {
+public class MessageParser implements Runnable {
 	private static Logger logger = Logger.getLogger(MessageParser.class);
+	private static Set<EventObserverEntry> observers = new HashSet<>();
+	
 	private BlockingQueue<String> queue;
+	
 	public MessageParser() {
 		this.queue = new ArrayBlockingQueue<>(500);
 	}
@@ -110,6 +120,8 @@ public class MessageParser extends Thread {
 		}
 	}
 	
+	////Static part
+	
 	//Map of Commands to functions
 	private static final Map<String,Consumer<Command>> commandmap;
 	static {
@@ -161,8 +173,7 @@ public class MessageParser extends Thread {
 			m.setMessage(c.getParams().split(" :",2)[1]);
 			m.setTags(c.getTags());
 			
-			//TODO: Dynamic observers
-			ContestBot.getInstance().getContest().handleMessage(m, false);
+			notifyObservers(Events.MESSAGE, m);
 		});
 		map.put("WHISPER", (c) -> {
 			Message m = new Message();
@@ -171,10 +182,20 @@ public class MessageParser extends Thread {
 			m.setMessage(c.getParams().split(" :",2)[1]);
 			m.setTags(c.getTags());
 			
-			//TODO: Dynamic observers
-			ContestBot.getInstance().getContest().handleMessage(m, true);
+			notifyObservers(Events.WHISPER, m);
 		});
 		
 		commandmap = Collections.unmodifiableMap(map);
+	}
+	
+	private static void notifyObservers(Events type, Event e) {
+		for(EventObserverEntry entry:observers) {
+			if(entry.types.contains(type))
+				entry.observer.onEvent(type, e);
+		}
+	}
+	
+	public static void registerObserver(EnumSet<Events> types, EventObserver observer) {
+		observers.add(new EventObserverEntry(types, observer));
 	}
 }

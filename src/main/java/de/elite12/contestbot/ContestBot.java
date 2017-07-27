@@ -4,14 +4,18 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Properties;
-import java.util.Scanner;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
+import org.reflections.Reflections;
+
+import de.elite12.contestbot.Model.EventObserver;
+import de.elite12.contestbot.Model.Events;
 
 public class ContestBot{
 
@@ -19,7 +23,6 @@ public class ContestBot{
 	private static Logger logger = Logger.getLogger(ContestBot.class);
 	private Connection connection;
 	private MessageParser parser;
-	private Contest contest;
 	
 	private static ContestBot instance;
 	
@@ -40,9 +43,7 @@ public class ContestBot{
 		}
 		
 		this.parser = new MessageParser();
-		this.parser.start();
-		
-		this.contest = new Contest();
+		new Thread(this.parser).start();
 		
 		try {
 			connection = new Connection();
@@ -50,6 +51,26 @@ public class ContestBot{
 			logger.fatal("Can not use parameter ircserver", e);
 			System.exit(1);
 		}
+		
+		// Load all modules
+		Reflections reflections = new Reflections("de.elite12.contestbot.modules");
+		Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Model.Autoload.class);
+		for (Class<?> c : classes) {
+			try {
+				Object i = c.getConstructor().newInstance();
+				if (c.isAnnotationPresent(Model.EventTypes.class)) {
+					Events[] types = c.getAnnotation(Model.EventTypes.class).value();
+					EnumSet<Events> set = EnumSet.noneOf(Events.class);
+					set.addAll(Arrays.asList(types));
+					MessageParser.registerObserver(set, (EventObserver) i);
+				}
+			} catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException
+					| IllegalArgumentException | InvocationTargetException | ClassCastException e) {
+				logger.warn("Can not autoload class " + c.getName(), e);
+			}
+		}
+		
+		
 		connection.connect();
 	}
 	
@@ -67,9 +88,5 @@ public class ContestBot{
 	
 	public MessageParser getParser() {
 		return this.parser;
-	}
-	
-	public Contest getContest() {
-		return this.contest;
 	}
 }
