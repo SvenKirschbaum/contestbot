@@ -32,7 +32,7 @@ public class MessageParser implements Runnable {
 			try {
 				Command c = new Command();
 				String cmd = "";
-				String s = this.queue.take();
+				String s = MessageParser.queue.take();
 				logger.trace("Handling Message: "+s);
 				
 				int parts;
