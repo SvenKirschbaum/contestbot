@@ -204,12 +204,15 @@ public class Contest {
 		switch (set.size()) {
 		case 0: {
 			ContestBot.getInstance().getConnection().sendChatMessage("Leider gibt es keinen Gewinner :(");
+			logger.info("Die Wette wurde beendet, es gibt keinen Gewinner");
 			break;
 		}
 		case 1: {
+			String winner = set.iterator().next();
 			ContestBot.getInstance().getConnection()
-					.sendChatMessage("Der Gewinner ist " + set.iterator().next() + " <3");
+					.sendChatMessage("Der Gewinner ist " + winner + " <3");
 			printDuration(d);
+			logger.info("Die Wette wurde beendet, " + winner + " hat gewonnen");
 			break;
 		}
 		default: {
@@ -221,6 +224,7 @@ public class Contest {
 			s.deleteCharAt(s.length() - 1);
 
 			ContestBot.getInstance().getConnection().sendChatMessage("Gewonnen haben: " + s.toString() + " <3");
+			logger.info("Die Wette wurde beendet, " + s.toString() + "haben gewonnen");
 			printDuration(d);
 		}
 		}
