@@ -42,6 +42,7 @@ public class Contest implements EventObserver{
 	boolean open = false;
 	boolean leaderboard = false;
 	ScheduledFuture<?> bettimer = null;
+	ScheduledFuture<?> leaderboardtimer = null;
 	ConcurrentHashMap<String, String> map;
 
 	public Contest() {
@@ -86,10 +87,12 @@ public class Contest implements EventObserver{
 					if(whisper) {
 						printLeaderboard(m.getUsername());
 					}
-					else if(!leaderboard) {
+					else if(!leaderboard || this.ispermitted(m)) {
 						printLeaderboard();
 						this.leaderboard = true;
-						this.scheduler.schedule(() -> {
+						if(this.leaderboardtimer != null)
+							this.leaderboardtimer.cancel(false);
+						this.leaderboardtimer = this.scheduler.schedule(() -> {
 							this.leaderboard = false;
 						}, 5, TimeUnit.MINUTES);
 					}
