@@ -1,3 +1,20 @@
+/*******************************************************************************
+ * Copyright (C) 2017 Sven Kirschbaum
+ * Copyright (C) 2017 Markus Licht
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
 package de.elite12.contestbot;
 
 import java.nio.BufferOverflowException;
@@ -19,12 +36,15 @@ import de.elite12.contestbot.Model.Event;
 import de.elite12.contestbot.Model.EventObserver;
 import de.elite12.contestbot.Model.EventObserverEntry;
 import de.elite12.contestbot.Model.Events;
+import de.elite12.contestbot.Model.Host;
 import de.elite12.contestbot.Model.Message;
+import de.elite12.contestbot.Model.Notice;
+import de.elite12.contestbot.Model.Timeout;
 
 public class MessageParser implements Runnable {
 	private static Logger logger = Logger.getLogger(MessageParser.class);
 	private static Set<EventObserverEntry> observers = new HashSet<>();
-	private static BlockingQueue<String> queue = new ArrayBlockingQueue<>(500);
+	protected static BlockingQueue<String> queue = new ArrayBlockingQueue<>(500);
 	
 	@Override
 	public void run() {
@@ -33,7 +53,8 @@ public class MessageParser implements Runnable {
 				Command c = new Command();
 				String cmd = "";
 				String s = MessageParser.queue.take();
-				logger.trace("Handling Message: "+s);
+				if(logger.isTraceEnabled())
+					logger.trace(String.format("Handling Message: %s", s));
 				
 				int parts;
 				switch(s.charAt(0)) {
@@ -75,14 +96,15 @@ public class MessageParser implements Runnable {
 						break;
 					}
 				}
-				logger.debug("Handling Message: " + c.getTags() + "|"+c.getPrefix()+"|"+cmd+"|"+c.getParams());
+				if(logger.isDebugEnabled())
+					logger.debug(String.format("Handling Message: %s|%s|%s|%s", c.getTags(), c.getPrefix(), cmd, c.getParams()));
 				
 				Consumer<Command> action = MessageParser.commandmap.get(cmd);
 				if(action != null) {
 					action.accept(c);
 				}
 				else {
-					logger.warn("No mapping for command: "+cmd);
+					logger.warn(String.format("No mapping for command: %s", cmd));
 				}
 				
 			} catch (InterruptedException e) {
@@ -129,7 +151,7 @@ public class MessageParser implements Runnable {
 		map.put("001", (c) -> {
 			ContestBot.getInstance().getConnection().send("CAP REQ :twitch.tv/tags");
 			ContestBot.getInstance().getConnection().send("CAP REQ :twitch.tv/commands");
-			ContestBot.getInstance().getConnection().send("JOIN #"+ContestBot.getInstance().getConfig("channelname"));
+			ContestBot.getInstance().getConnection().send(String.format("JOIN #%s", ContestBot.getInstance().getConfig("channelname")));
 		});
 		
 		//Unrequested information from the server
@@ -141,19 +163,77 @@ public class MessageParser implements Runnable {
 		map.put("372", donothing);
 		map.put("376", donothing);
 		//Confirmed Join
-		map.put("JOIN", (c) -> logger.info("Successfully joined Channel "+ContestBot.getInstance().getConfig("channelname")));
+		map.put("JOIN", (c) -> logger.info(String.format("Successfully joined Channel %s", ContestBot.getInstance().getConfig("channelname"))));
 		map.put("353", donothing);
 		map.put("366", donothing);
-		//Requested CAP
+		//Confirmed Requested CAP, we dont check this (yet)
 		map.put("CAP", donothing);
+		//Unknown Command
+		map.put("421", (c) -> {
+			logger.error("Unknown command");
+		});
 		
-		//Ignore new commands
-		map.put("USERSTATE", donothing); //When a user joins a channel or sends a PRIVMSG to a channel.
-		map.put("ROOMSTATE", donothing); //When a user joins a channel or a room setting is changed.
-		map.put("CLEARCHAT", donothing); //Temporary or permanent ban on a channel.
-		map.put("HOSTTARGET", donothing); //Host starts or stops a message.
-		map.put("NOTICE", donothing); //General notices from the server.
-		map.put("USERNOTICE", donothing); //On resubscription to a channel.
+		//Ignoring userstate
+		map.put("USERSTATE", donothing);
+		
+		//RECONNECT
+		map.put("RECONNECT", (c) -> {
+			ContestBot.getInstance().reconnect();
+		});
+		
+		//Roomstate
+		map.put("ROOMSTATE", (c) -> {
+			notifyObservers(Events.ROOMSTATE,c);
+		}); 
+		
+		//On subscription to a channel.
+		map.put("USERNOTICE", (c) -> {
+			Message m = new Message();
+			
+			m.setTags(c.getTags());
+			m.setUsername(c.getTags().get("user"));
+			m.setMessage(c.getParams().split(" :",2).length == 2 ? c.getParams().split(" :",2)[1]:"");
+			
+			notifyObservers(Events.SUBSCRIPTION, m);
+		}); 
+		
+		//Host starts or stops a message.
+		map.put("HOSTTARGET", (c) -> {
+			Host h = new Host();
+			
+			h.setViewers(c.getParams().split(" ").length==3?Integer.parseInt(c.getParams().split(" ")[2]):0);
+			h.setTarget(c.getParams().split(" ")[1].substring(1));
+			
+			notifyObservers(Events.HOST, h);
+		}); 
+		
+		//Temporary or permanent ban on a channel.
+		map.put("CLEARCHAT", (c) -> {
+			Timeout t = new Timeout();
+			
+			if(c.getTags() != null && c.getTags().containsKey("ban-duration")) {
+				t.setDuration(Long.parseLong(c.getTags().get("ban-duration")));
+			}
+			else {
+				t.setDuration(0L);
+			}
+			t.setReason(c.getTags()!=null?c.getTags().get("ban-reason"):null);
+			t.setUser(c.getParams().split(" :").length>=2?c.getParams().split(" :")[1]:"");
+			
+			notifyObservers(Events.TIMEOUT, t);
+		}); 
+		
+		//General notices from the server.
+		map.put("NOTICE", (c) -> {
+			Notice n = new Notice();
+			n.setMsgid(c.getTags()!=null?c.getTags().get("msg-id"):null);
+			n.setChannel(c.getParams().split(" :",2)[0]);
+			n.setMessage(c.getParams().split(" :",2)[1]);
+			
+			if(n.getMsgid()==null)
+				logger.warn(n);
+			notifyObservers(Events.NOTICE, n);
+		}); 
 		
 		//Ping from Server
 		//Reply with PONG
@@ -183,7 +263,7 @@ public class MessageParser implements Runnable {
 		commandmap = Collections.unmodifiableMap(map);
 	}
 	
-	private static void notifyObservers(Events type, Event e) {
+	protected static void notifyObservers(Events type, Event e) {
 		for(EventObserverEntry entry:observers) {
 			if(entry.types.contains(type))
 				entry.observer.onEvent(type, e);

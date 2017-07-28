@@ -14,12 +14,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package de.elite12.contestbot;
+package de.elite12.contestbot.modules;
 
-public class Starter {
+import java.util.ArrayDeque;
+import java.util.Queue;
 
-	public static void main(String[] args) {
-		new ContestBot();
+import de.elite12.contestbot.Model.Autoload;
+import de.elite12.contestbot.Model.Event;
+import de.elite12.contestbot.Model.EventObserver;
+import de.elite12.contestbot.Model.EventTypes;
+import de.elite12.contestbot.Model.Events;
+
+@Autoload
+@EventTypes({Events.WHISPER,Events.TIMEOUT})
+public class TestModule implements EventObserver{
+	public static TestModule instance = null;
+	public static Queue<Event> calls = new ArrayDeque<>();
+	
+	public TestModule() {
+		TestModule.instance = this;
 	}
 
+	@Override
+	public void onEvent(Events type, Event e) {
+		calls.add(e);
+	}
 }

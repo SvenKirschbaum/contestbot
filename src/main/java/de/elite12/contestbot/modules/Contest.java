@@ -1,3 +1,20 @@
+/*******************************************************************************
+ * Copyright (C) 2017 Sven Kirschbaum
+ * Copyright (C) 2017 Markus Licht
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
 package de.elite12.contestbot.modules;
 
 import java.sql.SQLException;
@@ -54,7 +71,7 @@ public class Contest implements EventObserver{
 		if (contestrunning && open) {
 			if (this.addEntry(m.getUsername(), m.getMessage()) && whisper) {
 				ContestBot.getInstance().getConnection().sendPrivatMessage(m.getUsername().toLowerCase(),
-						"Wette: [" + m.getMessage() + "] confirmed!");
+						String.format("Wette: [%s] confirmed!", m.getMessage()));
 			}
 		}
 		if (m.getMessage().startsWith("!")) {
@@ -115,8 +132,8 @@ public class Contest implements EventObserver{
 		bettimer = scheduler.schedule(() -> {
 			this.open = false;
 			ContestBot.getInstance().getConnection()
-					.sendChatMessage("Einsendeschluss: " + this.map.size() + " Teilnehmer");
-			logger.info("Einsendeschluss: " + this.map.size() + " Teilnehmer");
+					.sendChatMessage(String.format("Einsendeschluss: %d Teilnehmer", this.map.size()));
+			logger.info(String.format("Einsendeschluss: %d Teilnehmer", this.map.size()));
 		}, 3, TimeUnit.MINUTES);
 
 		ContestBot.getInstance().getConnection().sendChatMessage("Eine Wette wurde gestartet: Wann stirbt Janu?");
@@ -194,7 +211,7 @@ public class Contest implements EventObserver{
 			int points = this.database.getPoints(username);
 			if(points != 1) {
 				ContestBot.getInstance().getConnection().sendPrivatMessage(username,
-						"Du hast aktuell " + points + " Punkte!");
+						String.format("Du hast aktuell %d Punkte!",points));
 			}
 			else {
 				ContestBot.getInstance().getConnection().sendPrivatMessage(username,
@@ -211,7 +228,7 @@ public class Contest implements EventObserver{
 			ContestBot.getInstance().getConnection().sendChatMessage("Die Top 3:");
 			for (int i = 0; i < l.getUsernames().length; i++) {
 				ContestBot.getInstance().getConnection().sendChatMessage(
-						"" + (i + 1) + ". " + l.getUsernames()[i] + ": " + l.getPoints()[i] + (l.getPoints()[i]==1?" Punkt":" Punkte"));
+						String.format("%d. %s: %d Punkte", i + 1,  l.getUsernames()[i], l.getPoints()[i]));
 			}
 		} catch (SQLException e) {
 			logger.error("Could not get Leaderboard", e);
@@ -224,7 +241,7 @@ public class Contest implements EventObserver{
 			ContestBot.getInstance().getConnection().sendPrivatMessage(username, "Die Top 3:");
 			for (int i = 0; i < l.getUsernames().length; i++) {
 				ContestBot.getInstance().getConnection().sendPrivatMessage(username,
-						"" + (i + 1) + ". " + l.getUsernames()[i] + ": " + l.getPoints()[i] + (l.getPoints()[i]==1?" Punkt":" Punkte"));
+						String.format("%d. %s: %d Punkte", i + 1,  l.getUsernames()[i], l.getPoints()[i]));
 			}
 		} catch (SQLException e) {
 			logger.error("Could not get Leaderboard", e);
@@ -269,9 +286,9 @@ public class Contest implements EventObserver{
 		case 1: {
 			String winner = set.iterator().next();
 			ContestBot.getInstance().getConnection()
-					.sendChatMessage("Der Gewinner ist " + winner + " <3");
+					.sendChatMessage(String.format("Der Gewinner ist %s <3", winner));
 			printDuration(d);
-			logger.info("Die Wette wurde beendet, " + winner + " hat gewonnen");
+			logger.info(String.format("Die Wette wurde beendet, %s hat gewonnen", winner));
 			break;
 		}
 		default: {
@@ -282,8 +299,8 @@ public class Contest implements EventObserver{
 			}
 			s.deleteCharAt(s.length() - 1);
 
-			ContestBot.getInstance().getConnection().sendChatMessage("Gewonnen haben: " + s.toString() + " <3");
-			logger.info("Die Wette wurde beendet, " + s.toString() + "haben gewonnen");
+			ContestBot.getInstance().getConnection().sendChatMessage(String.format("Gewonnen haben: %s <3", s.toString()));
+			logger.info(String.format("Die Wette wurde beendet, %s haben gewonnen",s.toString()));
 			printDuration(d);
 		}
 		}
@@ -312,7 +329,7 @@ public class Contest implements EventObserver{
 			break;
 		}
 		default: {
-			ContestBot.getInstance().getConnection().sendChatMessage("Der Abstand beträgt " + abstand + " Minuten");
+			ContestBot.getInstance().getConnection().sendChatMessage(String.format("Der Abstand beträgt %d Minuten", abstand));
 		}
 		}
 	}

@@ -1,3 +1,20 @@
+/*******************************************************************************
+ * Copyright (C) 2017 Sven Kirschbaum
+ * Copyright (C) 2017 Markus Licht
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
 package de.elite12.contestbot;
 
 import java.sql.Connection;
@@ -14,15 +31,18 @@ import de.elite12.contestbot.Model.Leaderboard;
 
 public class SQLite {
 
-	private Connection con;
+	protected Connection con;
 	private static Logger logger = Logger.getLogger(SQLite.class);
 
 	public SQLite() {
+		this("jdbc:sqlite:points.db");
+	}
+	public SQLite(String jdbc) {
 
 		try {
 			Class.forName("org.sqlite.JDBC");
 
-			this.con = DriverManager.getConnection("jdbc:sqlite:points.db");
+			this.con = DriverManager.getConnection(jdbc);
 
 			Statement stmnt = this.con.createStatement();
 			stmnt.executeUpdate(
@@ -87,5 +107,10 @@ public class SQLite {
 		l.setUsernames(usernames.toArray(new String[0]));
 		return l;
 	}
-
+	
+	@Override
+	protected void finalize() throws Throwable {
+		this.con.close();
+		super.finalize();
+	}
 }

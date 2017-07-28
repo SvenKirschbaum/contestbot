@@ -16,10 +16,15 @@
  ******************************************************************************/
 package de.elite12.contestbot;
 
-public class Starter {
+import static org.junit.Assert.assertTrue;
 
-	public static void main(String[] args) {
-		new ContestBot();
+import org.junit.Test;
+
+public class DummyTest {
+
+	@Test
+	public void test() {
+		assertTrue(true);
 	}
 
 }

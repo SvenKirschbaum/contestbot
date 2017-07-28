@@ -1,3 +1,19 @@
+/*******************************************************************************
+ * Copyright (C) 2017 Sven Kirschbaum
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
 package de.elite12.contestbot;
 
 import java.io.IOException;
@@ -41,9 +57,9 @@ public class Connection extends WebSocketClient {
 
 	@Override
 	public void onClose(int code, String reason, boolean remote) {
-		Logger.getLogger(Connection.class).warn("Lost connection. Code ["+code+"] Reason ["+reason+"] Remote["+remote+"]");
-		//TODO: reconnect
-		System.exit(1);
+		Logger.getLogger(Connection.class).warn(String.format("Lost connection. Code [%d] Reason [%s] Remote[%b]", code, reason, remote));
+
+		ContestBot.getInstance().reconnect();
 	}
 
 	@Override
@@ -60,22 +76,22 @@ public class Connection extends WebSocketClient {
 					MessageParser.queueElement(s);
 			}
 			catch(BufferOverflowException e) {
-				Logger.getLogger(Connection.class).warn("Dropped Message: "+s,e);
+				Logger.getLogger(Connection.class).warn(String.format("Dropped Message: %s",s),e);
 			}
 		}
 	}
 
 	@Override
 	public void onOpen(ServerHandshake handshakedata) {
-		this.send("PASS " + ContestBot.getInstance().getConfig("oauth"));
-        this.send("NICK " + ContestBot.getInstance().getConfig("login"));
+		this.send(String.format("PASS %s", ContestBot.getInstance().getConfig("oauth")));
+        this.send(String.format("NICK %s", ContestBot.getInstance().getConfig("login")));
 	}
 	
 	public void sendChatMessage (String message) {
-		this.send("PRIVMSG #" + ContestBot.getInstance().getConfig("channelname") + " :"+message);
+		this.send(String.format("PRIVMSG #%s :%s", ContestBot.getInstance().getConfig("channelname"), message));
 	}
 	
 	public void sendPrivatMessage (String user, String message) {
-		this.send("PRIVMSG #" + ContestBot.getInstance().getConfig("channelname") + " :/w "+user+" "+message);
+		this.send(String.format("PRIVMSG #%s :/w %s %s", ContestBot.getInstance().getConfig("channelname"), user, message));
 	}
 }

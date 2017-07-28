@@ -1,3 +1,19 @@
+/*******************************************************************************
+ * Copyright (C) 2017 Sven Kirschbaum
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
 package de.elite12.contestbot;
 
 import java.io.BufferedInputStream;
@@ -26,7 +42,7 @@ public class ContestBot{
 	private Connection connection;
 	private ExecutorService threadPool;
 	
-	private static ContestBot instance;
+	protected static ContestBot instance;
 	
 
 	public ContestBot() {
@@ -57,6 +73,17 @@ public class ContestBot{
 		}
 		
 		// Load all modules
+		loadModules();
+		
+		
+		connection.connect();
+	}
+	
+	protected ContestBot(boolean testmode) {
+		
+	}
+
+	protected void loadModules() {
 		Reflections reflections = new Reflections("de.elite12.contestbot.modules");
 		Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Model.Autoload.class);
 		for (Class<?> c : classes) {
@@ -70,12 +97,9 @@ public class ContestBot{
 				}
 			} catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException
 					| IllegalArgumentException | InvocationTargetException | ClassCastException e) {
-				logger.warn("Can not autoload class " + c.getName(), e);
+				logger.warn(String.format("Can not autoload class %s", c.getName()), e);
 			}
 		}
-		
-		
-		connection.connect();
 	}
 	
 	public String getConfig(String key) {
@@ -88,5 +112,32 @@ public class ContestBot{
 	
 	public Connection getConnection() {
 		return this.connection;
+	}
+
+	public void reconnect() {
+		logger.debug("Reconnecting");
+		if(this.connection.isOpen()) {
+			this.connection.close();
+		}
+		
+		try {
+			this.connection = new Connection();
+		} catch (URISyntaxException e) {
+			logger.fatal("This should never happen",e);
+			System.exit(1);
+		}
+		
+		boolean success = false;
+		while(!success) {
+			try {
+				success = this.connection.connectBlocking();
+			} catch (InterruptedException e) {
+				if(logger.isDebugEnabled())
+					logger.warn("Error while reconnecting, retrying",e);
+				else
+					logger.warn("Error while reconnecting, retrying");
+			}
+		}
+		logger.info("Sucessfully reconnected");
 	}
 }
