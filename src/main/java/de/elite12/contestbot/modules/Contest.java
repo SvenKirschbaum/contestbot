@@ -92,6 +92,14 @@ public class Contest implements EventObserver{
 						judgeContest(split.length > 1 ? split[1].equalsIgnoreCase("win") : false);
 						break;
 					}
+					case "!stop": {
+						stopEntries();
+						break;
+					}
+					case "!adjust": {
+						adjustPoints(m.getMessage());
+						break;
+					}
 				}
 			}
 			//User Commands
@@ -118,7 +126,6 @@ public class Contest implements EventObserver{
 			}
 		}
 	}
-
 	private synchronized void startContest() {
 		if (contestrunning) {
 			ContestBot.getInstance().getConnection().sendChatMessage("Es läuft bereits eine Wette");
@@ -203,6 +210,53 @@ public class Contest implements EventObserver{
 
 		this.contestrunning = false;
 		this.map.clear();
+	}
+	
+	private synchronized void stopEntries() {
+		if (!contestrunning) {
+			ContestBot.getInstance().getConnection().sendChatMessage("Es läuft keine Wette");
+			logger.info("Kann die Einträge nicht beenden: Es läuft keine Wette");
+			return;
+		}
+		if(!open) {
+			ContestBot.getInstance().getConnection().sendChatMessage("Die Wette ist bereits geschlossen");
+			logger.info("Die Wette ist bereits geschlossen");
+			return;
+		}
+
+		if (bettimer != null)
+			bettimer.cancel(false);
+		this.open = false;
+
+		ContestBot.getInstance().getConnection().sendChatMessage("Die Einsendungen wurden vorzeitig beendet");
+		logger.info("Die Einsendungen wurden vorzeitig beendet");
+	}
+
+	private void adjustPoints(String message) {
+		String[] split = message.split(" ");
+		if(split.length != 3) {
+			ContestBot.getInstance().getConnection().sendChatMessage("Ungültige Parameter");
+			return;
+		}
+		String username = split[1];
+		Integer points;
+		try {
+			points = Integer.parseInt(split[2]);
+		}
+		catch (NumberFormatException e) {
+			ContestBot.getInstance().getConnection().sendChatMessage("Ungültige Parameter");
+			return;
+		}
+		
+		try {
+			this.database.changePoints(username, points);
+		}
+		catch (SQLException e) {
+			logger.error("Cant change points",e);
+			return;
+		}
+		ContestBot.getInstance().getConnection().sendChatMessage(String.format("Punkte von %s um %d geändert", username, points));
+		logger.info(String.format("Punkte von %s um %d geändert", username, points));
 	}
 
 	private void sendPoints(String username) {
@@ -310,9 +364,9 @@ public class Contest implements EventObserver{
 		for (String winner : set) {
 			try {
 				if (win)
-					this.database.addPoints(winner, 10);
+					this.database.changePoints(winner, 10);
 				else
-					this.database.addPoints(winner, (int) (d.getSeconds() / 60 <= 4 ? 5 - d.getSeconds() / 60 : 1));
+					this.database.changePoints(winner, (int) (d.getSeconds() / 60 <= 4 ? 5 - d.getSeconds() / 60 : 1));
 			} catch (SQLException e) {
 				logger.error("Could not add Points", e);
 			}

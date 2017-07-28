@@ -43,14 +43,20 @@ public class SQLiteTest {
 	@Test
 	public void testPoints() throws SQLException {
 		assertEquals("Wrong point value", 0, sql.getPoints("fallobst22"));
-		sql.addPoints("fallobst22", 5);
-		sql.addPoints("tester", 7);
+		sql.changePoints("fallobst22", 5);
+		sql.changePoints("tester", 7);
 		assertEquals("Wrong point value", 5, sql.getPoints("fallobst22"));
 		assertEquals("Wrong point value", 7, sql.getPoints("tester"));
-		sql.addPoints("fallobst22", 15);
-		sql.addPoints("blub", 14);
+		sql.changePoints("fallobst22", 15);
+		sql.changePoints("blub", 14);
 		assertEquals("Wrong point value", 20, sql.getPoints("fallobst22"));
 		assertEquals("Wrong point value", 14, sql.getPoints("blub"));
+		sql.changePoints("fallobst22", -17);
+		assertEquals("Wrong point value", 3, sql.getPoints("fallobst22"));
+		sql.changePoints("fallobst22", -10);
+		assertEquals("Wrong point value", -7, sql.getPoints("fallobst22"));
+		sql.changePoints("fallobst22", 27);
+		assertEquals("Wrong point value", 20, sql.getPoints("fallobst22"));
 		
 		Leaderboard l = sql.getLeaderboard(3);
 		assertArrayEquals("Wrong leaderboard", l.getUsernames(), new String[] {"fallobst22","blub","tester"});

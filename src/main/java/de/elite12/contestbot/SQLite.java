@@ -55,7 +55,7 @@ public class SQLite {
 
 	}
 
-	public void addPoints(String user, int points) throws SQLException {
+	public void changePoints(String user, int points) throws SQLException {
 		PreparedStatement stmnt = this.con
 				.prepareStatement("UPDATE points SET points = points + ? WHERE name = ?");
 		stmnt.setInt(1, points);
