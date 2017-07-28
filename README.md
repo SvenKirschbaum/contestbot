@@ -4,7 +4,7 @@ This repository contains a Twitch chat bot, and is currently provided on an "as 
 
 ### How do I get set up? ###
 
-execute the maven build, copy the config.properties file into the same directory as the createt jar file, modify the appropiate options and start the jar
+Download the latest version: https://dev.elite12.de/bamboo/browse/BOT-MAIN/latestSuccessful/artifact/shared/contestbot.zip/contestbot.zip
 
 ### Contribution guidelines ###
 

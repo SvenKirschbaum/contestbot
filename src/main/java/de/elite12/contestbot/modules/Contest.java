@@ -67,7 +67,7 @@ public class Contest implements EventObserver{
 		this.database = new SQLite();
 	}
 
-	public synchronized void handleMessage(Message m, boolean whisper) {
+	public void handleMessage(Message m, boolean whisper) {
 		if (contestrunning && open) {
 			if (this.addEntry(m.getUsername(), m.getMessage()) && whisper) {
 				ContestBot.getInstance().getConnection().sendPrivatMessage(m.getUsername().toLowerCase(),
@@ -119,7 +119,7 @@ public class Contest implements EventObserver{
 		}
 	}
 
-	private void startContest() {
+	private synchronized void startContest() {
 		if (contestrunning) {
 			ContestBot.getInstance().getConnection().sendChatMessage("Es läuft bereits eine Wette");
 			logger.info("Kann keine Wette starten: läuft bereits");
@@ -143,7 +143,7 @@ public class Contest implements EventObserver{
 		logger.info("Wette gestartet");
 	}
 
-	private void abortContest() {
+	private synchronized void abortContest() {
 		if (!contestrunning) {
 			ContestBot.getInstance().getConnection().sendChatMessage("Es läuft keine Wette");
 			logger.info("Kann die Wette nicht abbrechen: Es läuft keine Wette");
@@ -160,7 +160,7 @@ public class Contest implements EventObserver{
 		logger.info("Die laufende Wette wurde abgebrochen");
 	}
 
-	private void judgeContest(boolean win) {
+	private synchronized void judgeContest(boolean win) {
 		if (!contestrunning) {
 			ContestBot.getInstance().getConnection().sendChatMessage("Es läuft keine Wette");
 			logger.info("Kann die Wette nicht beenden: Es läuft keine Wette");
@@ -240,8 +240,10 @@ public class Contest implements EventObserver{
 			Leaderboard l = this.database.getLeaderboard(3);
 			ContestBot.getInstance().getConnection().sendPrivatMessage(username, "Die Top 3:");
 			for (int i = 0; i < l.getUsernames().length; i++) {
-				ContestBot.getInstance().getConnection().sendPrivatMessage(username,
-						String.format("%d. %s: %d Punkte", i + 1,  l.getUsernames()[i], l.getPoints()[i]));
+				final int j = i;
+				scheduler.schedule(() -> {
+					ContestBot.getInstance().getConnection().sendPrivatMessage(username, String.format("%d. %s: %d Punkte", j + 1,  l.getUsernames()[j], l.getPoints()[j]));
+				}, i, TimeUnit.SECONDS);
 			}
 		} catch (SQLException e) {
 			logger.error("Could not get Leaderboard", e);
