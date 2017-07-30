@@ -50,12 +50,6 @@ public class Connection extends WebSocketClient {
 	}
 
 	@Override
-	public void connect() {
-		super.connect();
-	}
-
-
-	@Override
 	public void onClose(int code, String reason, boolean remote) {
 		Logger.getLogger(Connection.class).warn(String.format("Lost connection. Code [%d] Reason [%s] Remote[%b]", code, reason, remote));
 
@@ -93,5 +87,12 @@ public class Connection extends WebSocketClient {
 	
 	public void sendPrivatMessage (String user, String message) {
 		this.send(String.format("PRIVMSG #%s :/w %s %s", ContestBot.getInstance().getConfig("channelname"), user, message));
+	}
+	
+	public void sendMessage(boolean whisper, String user, String message) {
+		if(whisper)
+			sendPrivatMessage(user, message);
+		else
+			sendChatMessage(message);
 	}
 }

@@ -120,22 +120,20 @@ public class ContestBot{
 			this.connection.close();
 		}
 		
-		try {
-			this.connection = new Connection();
-		} catch (URISyntaxException e) {
-			logger.fatal("This should never happen",e);
-			System.exit(1);
-		}
-		
 		boolean success = false;
 		while(!success) {
 			try {
+				this.connection = new Connection();
 				success = this.connection.connectBlocking();
+				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				if(logger.isDebugEnabled())
 					logger.warn("Error while reconnecting, retrying",e);
 				else
 					logger.warn("Error while reconnecting, retrying");
+			} catch (URISyntaxException e) {
+				logger.fatal("This should never happen",e);
+				System.exit(1);
 			}
 		}
 		logger.info("Sucessfully reconnected");

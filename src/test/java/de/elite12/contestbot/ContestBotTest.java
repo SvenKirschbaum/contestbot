@@ -18,6 +18,8 @@ package de.elite12.contestbot;
 
 import static org.junit.Assert.*;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -47,6 +49,7 @@ public class ContestBotTest {
 
 	@Test
 	public void testLoadModules() {
+		Logger.getLogger(ContestBot.class).setLevel(Level.ERROR);
 		c.loadModules();
 		assertNotNull("TestModule has not been loaded", TestModule.instance);
 		

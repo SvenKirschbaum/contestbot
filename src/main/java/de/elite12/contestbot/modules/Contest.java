@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 import org.apache.log4j.Logger;
 
 import de.elite12.contestbot.ContestBot;
+import de.elite12.contestbot.LockHelper;
 import de.elite12.contestbot.Model.Autoload;
 import de.elite12.contestbot.Model.Event;
 import de.elite12.contestbot.Model.EventObserver;
@@ -57,9 +58,7 @@ public class Contest implements EventObserver{
 
 	boolean contestrunning = false;
 	boolean open = false;
-	boolean leaderboard = false;
 	ScheduledFuture<?> bettimer = null;
-	ScheduledFuture<?> leaderboardtimer = null;
 	ConcurrentHashMap<String, String> map;
 
 	public Contest() {
@@ -109,17 +108,13 @@ public class Contest implements EventObserver{
 					break;
 				}
 				case "!leaderboard" : {
-					if(whisper) {
-						printLeaderboard(m.getUsername());
-					}
-					else if(!leaderboard || this.ispermitted(m)) {
-						printLeaderboard();
-						this.leaderboard = true;
-						if(this.leaderboardtimer != null)
-							this.leaderboardtimer.cancel(false);
-						this.leaderboardtimer = this.scheduler.schedule(() -> {
-							this.leaderboard = false;
-						}, 5, TimeUnit.MINUTES);
+					if(LockHelper.checkAccess("!leaderboard", this.ispermitted(m), whisper)) {
+						if(whisper) {
+							printLeaderboard(m.getUsername());
+						}
+						else {
+							printLeaderboard();
+						}
 					}
 					break;
 				}
