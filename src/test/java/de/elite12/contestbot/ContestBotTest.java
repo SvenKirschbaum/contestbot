@@ -53,7 +53,7 @@ public class ContestBotTest {
 		c.loadModules();
 		assertNotNull("TestModule has not been loaded", TestModule.instance);
 		
-		MessageParser.notifyObservers(Events.HOST, new Model.Host(0,"1"));
+		MessageParser.notifyObservers(Events.HOST, new Model.Host("5","1"));
 		MessageParser.notifyObservers(Events.WHISPER, new Model.Message("fallobst22","hi",null));
 		MessageParser.notifyObservers(Events.MESSAGE, new Model.Message("fallobst22","hallo",null));
 		MessageParser.notifyObservers(Events.TIMEOUT, new Model.Timeout(0,"blub","fallobst22"));

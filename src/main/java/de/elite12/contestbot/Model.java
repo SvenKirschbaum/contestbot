@@ -347,23 +347,23 @@ public class Model {
 	}
 	
 	public final static class Host implements Event {
-		int viewers;
+		String viewers;
 		String target;
 		
 		public Host() {
-			this.viewers = 0;
+			this.viewers = "";
 			this.target = null;
 		}
 		
-		public Host(int viewers, String target) {
+		public Host(String viewers, String target) {
 			this.viewers = viewers;
 			this.target = target;
 		}
 		
-		public int getViewers() {
+		public String getViewers() {
 			return viewers;
 		}
-		public void setViewers(int viewers) {
+		public void setViewers(String viewers) {
 			this.viewers = viewers;
 		}
 		public String getTarget() {
@@ -374,16 +374,11 @@ public class Model {
 		}
 
 		@Override
-		public String toString() {
-			return String.format("Host [viewers=%s, target=%s]", viewers, target);
-		}
-
-		@Override
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + ((target == null) ? 0 : target.hashCode());
-			result = prime * result + viewers;
+			result = prime * result + ((viewers == null) ? 0 : viewers.hashCode());
 			return result;
 		}
 
@@ -401,9 +396,17 @@ public class Model {
 					return false;
 			} else if (!target.equals(other.target))
 				return false;
-			if (viewers != other.viewers)
+			if (viewers == null) {
+				if (other.viewers != null)
+					return false;
+			} else if (!viewers.equals(other.viewers))
 				return false;
 			return true;
+		}
+
+		@Override
+		public String toString() {
+			return String.format("Host [viewers=%s, target=%s]", viewers, target);
 		}
 		
 	}

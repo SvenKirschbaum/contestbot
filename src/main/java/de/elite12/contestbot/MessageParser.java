@@ -201,7 +201,7 @@ public class MessageParser implements Runnable {
 		map.put("HOSTTARGET", (c) -> {
 			Host h = new Host();
 			
-			h.setViewers(c.getParams().split(" ").length==3?Integer.parseInt(c.getParams().split(" ")[2]):0);
+			h.setViewers(c.getParams().split(" ").length==3?c.getParams().split(" ")[2]:"");
 			h.setTarget(c.getParams().split(" ")[1].substring(1));
 			
 			notifyObservers(Events.HOST, h);
