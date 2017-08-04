@@ -28,11 +28,11 @@ import de.elite12.contestbot.Model.Leaderboard;
 
 public class SQLiteTest {
 	
-	private static SQLite sql;
+	private static SQLiteStub sql;
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
-		sql = new SQLite("jdbc:sqlite::memory:");
+		sql = new SQLiteStub("jdbc:sqlite::memory:");
 	}
 	
 	@AfterClass
@@ -61,6 +61,14 @@ public class SQLiteTest {
 		Leaderboard l = sql.getLeaderboard(3);
 		assertArrayEquals("Wrong leaderboard", l.getUsernames(), new String[] {"fallobst22","blub","tester"});
 		assertArrayEquals("Wrong leaderboard", l.getPoints(), new Integer[] {20,14,7});
+	}
+	
+	private static class SQLiteStub extends SQLite {
+
+		protected SQLiteStub(String jdbc) {
+			super(jdbc);
+		}
+		
 	}
 
 }

@@ -33,11 +33,13 @@ public class SQLite {
 
 	protected Connection con;
 	private static Logger logger = Logger.getLogger(SQLite.class);
+	private static SQLite instance = null;
 
-	public SQLite() {
+	private SQLite() {
 		this("jdbc:sqlite:points.db");
 	}
-	public SQLite(String jdbc) {
+	
+	protected SQLite(String jdbc) {
 
 		try {
 			Class.forName("org.sqlite.JDBC");
@@ -106,6 +108,12 @@ public class SQLite {
 		l.setPoints(points.toArray(new Integer[0]));
 		l.setUsernames(usernames.toArray(new String[0]));
 		return l;
+	}
+	
+	public static SQLite getInstance() {
+		if(SQLite.instance == null)
+			SQLite.instance = new SQLite();
+		return SQLite.instance;
 	}
 	
 	@Override

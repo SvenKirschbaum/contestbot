@@ -49,8 +49,6 @@ import de.elite12.contestbot.SQLite;
 @EventTypes({ Events.MESSAGE, Events.WHISPER })
 public class Contest implements EventObserver{
 
-	private SQLite database;
-
 	private static final Pattern entrypattern = Pattern.compile("^(\\d{1,2}):(\\d{1,2})$");
 	private static final Logger logger = Logger.getLogger(Contest.class);
 
@@ -63,7 +61,6 @@ public class Contest implements EventObserver{
 
 	public Contest() {
 		map = new ConcurrentHashMap<>(100);
-		this.database = new SQLite();
 	}
 
 	public void handleMessage(Message m, boolean whisper) {
@@ -75,6 +72,7 @@ public class Contest implements EventObserver{
 		}
 		if (m.getMessage().startsWith("!")) {
 			String[] split = m.getMessage().split(" ", 2);
+			split[0] = split[0].toLowerCase();
 			
 			//Mod Commands
 			if (this.ispermitted(m)) {
@@ -244,7 +242,7 @@ public class Contest implements EventObserver{
 		}
 		
 		try {
-			this.database.changePoints(username, points);
+			SQLite.getInstance().changePoints(username, points);
 		}
 		catch (SQLException e) {
 			logger.error("Cant change points",e);
@@ -257,7 +255,7 @@ public class Contest implements EventObserver{
 	private void sendPoints(String username) {
 		logger.debug("Sending points to " + username);
 		try {
-			int points = this.database.getPoints(username);
+			int points = SQLite.getInstance().getPoints(username);
 			if(points != 1) {
 				ContestBot.getInstance().getConnection().sendPrivatMessage(username,
 						String.format("Du hast aktuell %d Punkte!",points));
@@ -273,7 +271,7 @@ public class Contest implements EventObserver{
 	
 	private void printLeaderboard() {
 		try {
-			Leaderboard l = this.database.getLeaderboard(3);
+			Leaderboard l = SQLite.getInstance().getLeaderboard(3);
 			ContestBot.getInstance().getConnection().sendChatMessage("Die Top 3:");
 			for (int i = 0; i < l.getUsernames().length; i++) {
 				ContestBot.getInstance().getConnection().sendChatMessage(
@@ -286,7 +284,7 @@ public class Contest implements EventObserver{
 
 	private void printLeaderboard(String username) {
 		try {
-			Leaderboard l = this.database.getLeaderboard(3);
+			Leaderboard l = SQLite.getInstance().getLeaderboard(3);
 			ContestBot.getInstance().getConnection().sendPrivatMessage(username, "Die Top 3:");
 			for (int i = 0; i < l.getUsernames().length; i++) {
 				final int j = i;
@@ -359,9 +357,9 @@ public class Contest implements EventObserver{
 		for (String winner : set) {
 			try {
 				if (win)
-					this.database.changePoints(winner, 10);
+					SQLite.getInstance().changePoints(winner, 10);
 				else
-					this.database.changePoints(winner, (int) (d.getSeconds() / 60 <= 4 ? 5 - d.getSeconds() / 60 : 1));
+					SQLite.getInstance().changePoints(winner, (int) (d.getSeconds() / 60 <= 4 ? 5 - d.getSeconds() / 60 : 1));
 			} catch (SQLException e) {
 				logger.error("Could not add Points", e);
 			}
