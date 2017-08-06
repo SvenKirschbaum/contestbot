@@ -22,6 +22,9 @@ import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 import javax.json.JsonValue.ValueType;
@@ -47,9 +50,10 @@ import de.elite12.contestbot.SQLite;
 
 @Autoload
 @EventTypes({ Events.MESSAGE, Events.WHISPER })
-public class General implements EventObserver {// TODO: Reaktion bei Spende
+public class General implements EventObserver {
 
 	private static Logger logger = Logger.getLogger(General.class);
+	private static Pattern pattern = Pattern.compile("^(\\w+) haut €(\\d+)\\.(\\d{2}) raus, DerInder dankt! derindWTF$");
 
 	private String oauthkey;
 	private String channelid;
@@ -150,6 +154,17 @@ public class General implements EventObserver {// TODO: Reaktion bei Spende
 					}
 					break;
 				}
+			}
+		}
+		if(m.getUsername().equalsIgnoreCase(ContestBot.getInstance().getConfig("channelname"))) {
+			Matcher matcher = pattern.matcher(m.getMessage());
+			if(matcher.matches()) {
+				String user = matcher.group(1);
+				Integer euro = Integer.parseInt(matcher.group(2));
+				Integer cent = Integer.parseInt(matcher.group(3));
+				
+				ContestBot.getInstance().getConnection().sendChatMessage(String.format("%s <3", user));
+				logger.info(String.format("%s spendet %d.%d€", user, euro, cent));
 			}
 		}
 	}
