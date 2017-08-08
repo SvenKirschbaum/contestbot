@@ -4,3 +4,5 @@
 /target/
 /config.properties
 /points.db
+/contest.state
+/chatlog.txt

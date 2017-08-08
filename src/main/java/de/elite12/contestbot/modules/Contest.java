@@ -17,6 +17,14 @@
  ******************************************************************************/
 package de.elite12.contestbot.modules;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -48,23 +56,60 @@ import de.elite12.contestbot.SQLite;
 @Autoload
 @EventTypes({ Events.MESSAGE, Events.WHISPER })
 public class Contest implements EventObserver{
-
+	
 	private static final Pattern entrypattern = Pattern.compile("^(\\d{1,2}):(\\d{1,2})$");
 	private static final Logger logger = Logger.getLogger(Contest.class);
 
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-	boolean contestrunning = false;
-	boolean open = false;
-	ScheduledFuture<?> bettimer = null;
-	ConcurrentHashMap<String, String> map;
+	
+	private ScheduledFuture<?> bettimer = null;
+	private ContestState state;
+	
+	private static class ContestState implements Serializable{
 
-	public Contest() {
-		map = new ConcurrentHashMap<>(100);
+		private static final long serialVersionUID = 1L;
+		
+		ConcurrentHashMap<String, String> map;
+		boolean contestrunning = false;
+		transient boolean open = false;
+		
+		public ContestState() {
+			map = new ConcurrentHashMap<>(100);
+		}
+		
 	}
 
+	public Contest() {
+		try {
+			Path p = Paths.get("contest.state");
+			ObjectInputStream in = new ObjectInputStream(Files.newInputStream(p));
+			this.state = (ContestState) in.readObject();
+			in.close();
+		}
+		catch (NoSuchFileException e) {
+			logger.info("No state file exists, starting empty");
+		}
+		catch (IOException | ClassNotFoundException e) {
+			logger.error("Could not load state",e);
+		}
+		
+		if(this.state == null)
+			this.state = new ContestState();
+		
+		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				saveState();
+			}
+		}));
+	}
+
+	
+
 	public void handleMessage(Message m, boolean whisper) {
-		if (contestrunning && open) {
+		if (this.state.contestrunning && this.state.open) {
 			if (this.addEntry(m.getUsername(), m.getMessage()) && whisper) {
 				ContestBot.getInstance().getConnection().sendPrivatMessage(m.getUsername().toLowerCase(),
 						String.format("Wette: [%s] confirmed!", m.getMessage()));
@@ -120,20 +165,21 @@ public class Contest implements EventObserver{
 		}
 	}
 	private synchronized void startContest() {
-		if (contestrunning) {
+		if (this.state.contestrunning) {
 			ContestBot.getInstance().getConnection().sendChatMessage("Es läuft bereits eine Wette");
 			logger.info("Kann keine Wette starten: läuft bereits");
 			return;
 		}
 
-		this.contestrunning = true;
-		this.open = true;
+		this.state.contestrunning = true;
+		this.state.open = true;
 
 		bettimer = scheduler.schedule(() -> {
-			this.open = false;
+			this.state.open = false;
+			saveState();
 			ContestBot.getInstance().getConnection()
-					.sendChatMessage(String.format("Einsendeschluss: %d Teilnehmer", this.map.size()));
-			logger.info(String.format("Einsendeschluss: %d Teilnehmer", this.map.size()));
+					.sendChatMessage(String.format("Einsendeschluss: %d Teilnehmer", this.state.map.size()));
+			logger.info(String.format("Einsendeschluss: %d Teilnehmer", this.state.map.size()));
 		}, 3, TimeUnit.MINUTES);
 
 		ContestBot.getInstance().getConnection().sendChatMessage("Eine Wette wurde gestartet: Wann stirbt Janu?");
@@ -144,7 +190,7 @@ public class Contest implements EventObserver{
 	}
 
 	private synchronized void abortContest() {
-		if (!contestrunning) {
+		if (!this.state.contestrunning) {
 			ContestBot.getInstance().getConnection().sendChatMessage("Es läuft keine Wette");
 			logger.info("Kann die Wette nicht abbrechen: Es läuft keine Wette");
 			return;
@@ -152,33 +198,35 @@ public class Contest implements EventObserver{
 
 		if (bettimer != null)
 			bettimer.cancel(false);
-		this.open = false;
-		this.contestrunning = false;
-		this.map.clear();
+		this.state.open = false;
+		this.state.contestrunning = false;
+		this.state.map.clear();
 
 		ContestBot.getInstance().getConnection().sendChatMessage("Die Wette wurde abgebrochen");
 		logger.info("Die laufende Wette wurde abgebrochen");
+		
+		saveState();
 	}
 
 	private synchronized void judgeContest(boolean win) {
-		if (!contestrunning) {
+		if (!this.state.contestrunning) {
 			ContestBot.getInstance().getConnection().sendChatMessage("Es läuft keine Wette");
 			logger.info("Kann die Wette nicht beenden: Es läuft keine Wette");
 			return;
 		}
-		if (open) {
+		if (this.state.open) {
 			bettimer.cancel(false);
 		}
 
 		if (win) {
-			Set<Entry<String, String>> set = this.map.entrySet();
+			Set<Entry<String, String>> set = this.state.map.entrySet();
 			set.removeIf((e) -> !e.getValue().equalsIgnoreCase("win"));
 
 			Set<String> winset = new HashSet<>();
 			set.forEach((e) -> winset.add(e.getKey()));
 			handleWinner(winset, Duration.ZERO, win);
 		} else {
-			Set<Entry<String, String>> set = this.map.entrySet();
+			Set<Entry<String, String>> set = this.state.map.entrySet();
 			LocalDateTime now = LocalDateTime.now().withSecond(0).withNano(0);
 			Duration d = Duration.ofDays(1);
 			Set<String> winset = new HashSet<>();
@@ -201,17 +249,18 @@ public class Contest implements EventObserver{
 			handleWinner(winset, d, win);
 		}
 
-		this.contestrunning = false;
-		this.map.clear();
+		this.state.contestrunning = false;
+		this.state.map.clear();
+		saveState();
 	}
 	
 	private synchronized void stopEntries() {
-		if (!contestrunning) {
+		if (!this.state.contestrunning) {
 			ContestBot.getInstance().getConnection().sendChatMessage("Es läuft keine Wette");
 			logger.info("Kann die Einträge nicht beenden: Es läuft keine Wette");
 			return;
 		}
-		if(!open) {
+		if(!this.state.open) {
 			ContestBot.getInstance().getConnection().sendChatMessage("Die Wette ist bereits geschlossen");
 			logger.info("Die Wette ist bereits geschlossen");
 			return;
@@ -219,10 +268,12 @@ public class Contest implements EventObserver{
 
 		if (bettimer != null)
 			bettimer.cancel(false);
-		this.open = false;
+		this.state.open = false;
 
-		ContestBot.getInstance().getConnection().sendChatMessage("Die Einsendungen wurden vorzeitig beendet");
-		logger.info("Die Einsendungen wurden vorzeitig beendet");
+		ContestBot.getInstance().getConnection().sendChatMessage(String
+				.format("Die Einsendungen wurden vorzeitig beendet, es gab %d Teilnehmer", this.state.map.size()));
+		logger.info(String.format("Die Einsendungen wurden vorzeitig beendet, es gab %d Teilnehmer", this.state.map.size()));
+		saveState();
 	}
 
 	private void adjustPoints(String message) {
@@ -313,11 +364,11 @@ public class Contest implements EventObserver{
 				if (entrytime.isBefore(now))
 					entrytime = entrytime.plusDays(1);
 
-				this.map.put(username, entrytime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+				this.state.map.put(username, entrytime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 			}
 			return true;
 		} else if (message.equalsIgnoreCase("win")) {
-			this.map.put(username, "win");
+			this.state.map.put(username, "win");
 			return true;
 		} else {
 			return false;
@@ -386,5 +437,19 @@ public class Contest implements EventObserver{
 	@Override
 	public void onEvent(Events type, Event e) {
 		this.handleMessage((Message) e, type==Events.WHISPER);
+	}
+	
+	private void saveState() {
+		try {
+			Path p = Paths.get("contest.state");
+			Files.deleteIfExists(p);
+			ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(p));
+			out.writeObject(state);
+			out.flush();
+			out.close();
+		}
+		catch (IOException e) {
+			logger.error("Could not save state",e);
+		}
 	}
 }

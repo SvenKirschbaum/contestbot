@@ -140,7 +140,7 @@ public class Model {
 
 		@Override
 		public String toString() {
-			return String.format("%s says: %s", username, message);
+			return String.format("%s says: %s [%s]", username, message, tags!=null?tags.toString():"null");
 		}
 
 		@Override

@@ -95,8 +95,8 @@ public class ContestBot{
 					set.addAll(Arrays.asList(types));
 					MessageParser.registerObserver(set, (EventObserver) i);
 				}
-			} catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException
-					| IllegalArgumentException | InvocationTargetException | ClassCastException e) {
+			} catch (NoSuchMethodException | InstantiationException | IllegalAccessException
+					 | InvocationTargetException | RuntimeException e) {
 				logger.warn(String.format("Can not autoload class %s", c.getName()), e);
 			}
 		}
