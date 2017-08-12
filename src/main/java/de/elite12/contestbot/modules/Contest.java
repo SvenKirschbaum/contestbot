@@ -322,8 +322,8 @@ public class Contest implements EventObserver{
 	
 	private void printLeaderboard() {
 		try {
-			Leaderboard l = SQLite.getInstance().getLeaderboard(3);
-			ContestBot.getInstance().getConnection().sendChatMessage("Die Top 3:");
+			Leaderboard l = SQLite.getInstance().getLeaderboard(5);
+			ContestBot.getInstance().getConnection().sendChatMessage("Die Top 5:");
 			for (int i = 0; i < l.getUsernames().length; i++) {
 				ContestBot.getInstance().getConnection().sendChatMessage(
 						String.format("%d. %s: %d Punkte", i + 1,  l.getUsernames()[i], l.getPoints()[i]));
@@ -335,8 +335,8 @@ public class Contest implements EventObserver{
 
 	private void printLeaderboard(String username) {
 		try {
-			Leaderboard l = SQLite.getInstance().getLeaderboard(3);
-			ContestBot.getInstance().getConnection().sendPrivatMessage(username, "Die Top 3:");
+			Leaderboard l = SQLite.getInstance().getLeaderboard(5);
+			ContestBot.getInstance().getConnection().sendPrivatMessage(username, "Die Top 5:");
 			for (int i = 0; i < l.getUsernames().length; i++) {
 				final int j = i;
 				scheduler.schedule(() -> {

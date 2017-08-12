@@ -89,8 +89,9 @@ public class SQLite {
 	}
 
 	public Leaderboard getLeaderboard(int count) throws SQLException {
-		PreparedStatement stmnt = this.con.prepareStatement("SELECT name,points FROM points ORDER BY points DESC LIMIT ?");
-		stmnt.setInt(1, count);
+		PreparedStatement stmnt = this.con.prepareStatement("SELECT name,points FROM points WHERE name != ? ORDER BY points DESC LIMIT ?");
+		stmnt.setString(1, "!ripdevil");
+		stmnt.setInt(2, count);
 		ResultSet rs = stmnt.executeQuery();
 		
 		ArrayList<String> usernames = new ArrayList<>();
