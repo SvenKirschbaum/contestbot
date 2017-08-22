@@ -19,6 +19,7 @@ package de.elite12.contestbot.modules;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -153,6 +154,12 @@ public class General implements EventObserver {
 						} catch (SQLException e1) {
 							logger.error("Error in !ripdevil",e1);
 						}	
+					}
+					break;
+				}
+				case "!time": {
+					if(LockHelper.checkAccess("!time", ispermitted(m), whisper)) {
+						ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), String.format("Es ist %s Uhr!", LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))));
 					}
 					break;
 				}
