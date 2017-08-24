@@ -121,7 +121,7 @@ public class General implements EventObserver {
 					if(LockHelper.checkAccess("!hardware", ispermitted(m), whisper))
 					{
 						ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
-							"GTX 770 2GB");
+								"GTX 770 2GB");
 						ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
 								"I5 4690 @ 3,7Ghz");
 						ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
@@ -202,6 +202,15 @@ public class General implements EventObserver {
 								logger.error("Error getting Followerdata",e1);
 							}
 						}
+					}
+					break;
+				}
+				case "!commands": {
+					if(LockHelper.checkAccess("!commands", ispermitted(m), whisper)) {
+						if(ispermitted(m)) {
+							ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "!start, !abort, !stop, !judge, !adjust");
+						}
+						ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "!points, !leaderboard, !discord, !twitter, !ts, !hardware, !uptime, !ripdevil, !time, !followage, !commands");
 					}
 					break;
 				}
