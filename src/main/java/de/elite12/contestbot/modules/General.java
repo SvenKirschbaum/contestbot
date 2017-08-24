@@ -174,9 +174,11 @@ public class General implements EventObserver {
 				case "!followage": {
 					if(LockHelper.checkAccess("!followage " + m.getUsername(), ispermitted(m), whisper)) {
 						String userid = null;
+						String username = m.getUsername();
 						if(split.length > 1 && !split[1].isEmpty()) {
 							try {
 								userid = getTwitchUserID(split[1]);
+								username = split[1];
 							}
 							catch (WebApplicationException e1) {
 								ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "Der User wurde nicht gefunden!");
@@ -190,11 +192,11 @@ public class General implements EventObserver {
 							JsonObject obj = this.client.target("https://api.twitch.tv/kraken/users").path(userid).path("follows/channels").path(this.channelid).request().get(JsonObject.class);
 							Instant followed_at = Instant.parse(obj.getString("created_at"));
 							Duration d = Duration.between(followed_at, Instant.now());
-							ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), String.format("@%s folgt bereits seit %d Tagen %d Stunden und %d Minuten!", m.getUsername(), d.getSeconds()/86400, (d.getSeconds()/3600)%24, (d.getSeconds()/60)%60));
+							ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), String.format("@%s folgt bereits seit %d Tagen %d Stunden und %d Minuten!", username, d.getSeconds()/86400, (d.getSeconds()/3600)%24, (d.getSeconds()/60)%60));
 						}
 						catch (WebApplicationException e1) {
 							if(e1.getResponse().getStatus() == 404) {
-								ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), String.format("@%s ist kein Follower!", m.getUsername()));
+								ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), String.format("@%s ist kein Follower!", username));
 							}
 							else {
 								logger.error("Error getting Followerdata",e1);
