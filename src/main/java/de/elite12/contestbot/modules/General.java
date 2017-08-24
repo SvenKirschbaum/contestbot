@@ -19,6 +19,7 @@ package de.elite12.contestbot.modules;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -26,9 +27,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 import javax.json.JsonValue.ValueType;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.ClientRequestContext;
@@ -50,7 +53,7 @@ import de.elite12.contestbot.Model.Message;
 import de.elite12.contestbot.SQLite;
 
 @Autoload
-@EventTypes({ Events.MESSAGE, Events.WHISPER })
+@EventTypes({ Events.MESSAGE, Events.WHISPER, Events.SUBSCRIPTION })
 public class General implements EventObserver {
 
 	private static Logger logger = Logger.getLogger(General.class);
@@ -70,15 +73,15 @@ public class General implements EventObserver {
 					@Override
 					public void filter(ClientRequestContext requestContext) throws IOException {
 						requestContext.getHeaders().add("Authorization", String.format("OAuth %s", oauthkey));
+						if(!requestContext.getHeaders().containsKey("Accept"))
+								requestContext.getHeaders().add("Accept", "application/vnd.twitchtv.v5+json");
 					}
 				});
 				return true;
 			}
 		});
-		WebTarget target = client.target("https://api.twitch.tv/kraken/users").queryParam("login",
-				ContestBot.getInstance().getConfig("channelname"));
-		this.channelid = target.request("application/vnd.twitchtv.v5+json").get(JsonObject.class).getJsonArray("users")
-				.getJsonObject(0).getString("_id");
+		
+		this.channelid = getTwitchUserID(ContestBot.getInstance().getConfig("channelname"));
 		logger.debug(String.format("Loaded Channelid %s", this.channelid));
 	}
 
@@ -86,6 +89,11 @@ public class General implements EventObserver {
 	public void onEvent(Events type, Event e) {
 		boolean whisper = (type == Events.WHISPER);
 		Message m = (Message) e;
+		
+		if(type == Events.SUBSCRIPTION) {
+			ContestBot.getInstance().getConnection().sendChatMessage("SUBHYPE <3");
+			return;
+		}
 
 		if (m.getMessage().charAt(0) == '!') {
 			String[] split = m.getMessage().split(" ", 2);
@@ -124,7 +132,7 @@ public class General implements EventObserver {
 				case "!uptime": {
 					if(LockHelper.checkAccess("!uptime", ispermitted(m), whisper)) {
 						JsonValue r = this.client.target("https://api.twitch.tv/kraken/streams/").path(this.channelid)
-								.request("application/vnd.twitchtv.v5+json").get(JsonObject.class).get("stream");
+								.request().get(JsonObject.class).get("stream");
 						if (r.getValueType() == ValueType.OBJECT) {
 							JsonObject stream = (JsonObject) r;
 							Duration d = Duration.between(ZonedDateTime.parse(stream.getString("created_at"),
@@ -163,6 +171,38 @@ public class General implements EventObserver {
 					}
 					break;
 				}
+				case "!followage": {
+					if(LockHelper.checkAccess("!followage " + m.getUsername(), ispermitted(m), whisper)) {
+						String userid = null;
+						if(split.length > 1 && !split[1].isEmpty()) {
+							try {
+								userid = getTwitchUserID(split[1]);
+							}
+							catch (WebApplicationException e1) {
+								ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "Der User wurde nicht gefunden!");
+								break;
+							}
+						}
+						else {
+							userid = getTwitchUserID(m.getUsername());
+						}
+						try {
+							JsonObject obj = this.client.target("https://api.twitch.tv/kraken/users").path(userid).path("follows/channels").path(this.channelid).request().get(JsonObject.class);
+							Instant followed_at = Instant.parse(obj.getString("created_at"));
+							Duration d = Duration.between(followed_at, Instant.now());
+							ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), String.format("@%s folgt bereits seit %d Tagen %d Stunden und %d Minuten!", m.getUsername(), d.getSeconds()/86400, (d.getSeconds()/3600)%24, (d.getSeconds()/60)%60));
+						}
+						catch (WebApplicationException e1) {
+							if(e1.getResponse().getStatus() == 404) {
+								ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), String.format("@%s ist kein Follower!", m.getUsername()));
+							}
+							else {
+								logger.error("Error getting Followerdata",e1);
+							}
+						}
+					}
+					break;
+				}
 			}
 		}
 		if(m.getUsername().equalsIgnoreCase(ContestBot.getInstance().getConfig("channelname"))) {
@@ -175,6 +215,17 @@ public class General implements EventObserver {
 				ContestBot.getInstance().getConnection().sendChatMessage(String.format("%s <3", user));
 				logger.info(String.format("%s spendet %d.%d€", user, euro, cent));
 			}
+		}
+	}
+	
+	private String getTwitchUserID(String username) throws WebApplicationException{
+		WebTarget target = client.target("https://api.twitch.tv/kraken/users").queryParam("login", username);
+		JsonArray a = target.request().get(JsonObject.class).getJsonArray("users");
+		if(a.size() > 0) {
+			return a.getJsonObject(0).getString("_id");
+		}
+		else {
+			throw new WebApplicationException(404);
 		}
 	}
 	

@@ -191,7 +191,7 @@ public class MessageParser implements Runnable {
 			Message m = new Message();
 			
 			m.setTags(c.getTags());
-			m.setUsername(c.getTags().get("user"));
+			m.setUsername(c.getTags().get("login"));
 			m.setMessage(c.getParams().split(" :",2).length == 2 ? c.getParams().split(" :",2)[1]:"");
 			
 			notifyObservers(Events.SUBSCRIPTION, m);
