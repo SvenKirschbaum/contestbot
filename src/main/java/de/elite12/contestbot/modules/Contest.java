@@ -71,6 +71,7 @@ public class Contest implements EventObserver {
         
         ConcurrentHashMap<String, String> map;
         boolean contestrunning = false;
+        boolean winonly = false;
         transient boolean open = false;
         
         public ContestState() {
@@ -119,7 +120,7 @@ public class Contest implements EventObserver {
             if (this.ispermitted(m)) {
                 switch (split[0]) {
                     case "!start": {
-                        startContest();
+                        startContest(split.length > 1 ? split[1].equalsIgnoreCase("win") : false);
                         break;
                     }
                     case "!abort": {
@@ -160,7 +161,7 @@ public class Contest implements EventObserver {
         }
     }
     
-    private synchronized void startContest() {
+    private synchronized void startContest(boolean winonly) {
         if (this.state.contestrunning) {
             ContestBot.getInstance().getConnection().sendChatMessage("Es läuft bereits eine Wette");
             logger.info("Kann keine Wette starten: läuft bereits");
@@ -169,6 +170,7 @@ public class Contest implements EventObserver {
         
         this.state.contestrunning = true;
         this.state.open = true;
+        this.state.winonly = winonly;
         
         bettimer = scheduler.schedule(() -> {
             this.state.open = false;
@@ -178,9 +180,15 @@ public class Contest implements EventObserver {
             logger.info(String.format("Einsendeschluss: %d Teilnehmer", this.state.map.size()));
         }, 3, TimeUnit.MINUTES);
         
-        ContestBot.getInstance().getConnection().sendChatMessage("Eine Wette wurde gestartet: Wann stirbt Janu?");
-        ContestBot.getInstance().getConnection()
+        if(winonly) {
+        	ContestBot.getInstance().getConnection().sendChatMessage("Eine Wette wurde gestartet: Wird Janu gewinnen oder verlieren?");
+        	ContestBot.getInstance().getConnection().sendChatMessage("Zum mitwetten schreibt 'win' oder 'lose'");
+        }
+        else {
+        	ContestBot.getInstance().getConnection().sendChatMessage("Eine Wette wurde gestartet: Wann stirbt Janu?");
+        	ContestBot.getInstance().getConnection()
                 .sendChatMessage("Zum mitwetten schreibt eine Uhrzeit im Format 'HH:mm' oder 'win'");
+        }
         ContestBot.getInstance().getConnection().sendChatMessage("Die Einträge schließen in drei Minuten");
         logger.info("Wette gestartet");
     }
@@ -223,27 +231,36 @@ public class Contest implements EventObserver {
             set.forEach((e) -> winset.add(e.getKey()));
             handleWinner(winset, Duration.ZERO, win);
         } else {
-            Set<Entry<String, String>> set = this.state.map.entrySet();
-            LocalDateTime now = LocalDateTime.now().withSecond(0).withNano(0);
-            Duration d = Duration.ofDays(1);
-            Set<String> winset = new HashSet<>();
-            
-            set.removeIf((e) -> e.getValue().equalsIgnoreCase("win"));
-            for (Entry<String, String> e : set) {
-                Duration diff = Duration
-                        .between(LocalDateTime.parse(e.getValue(), DateTimeFormatter.ISO_LOCAL_DATE_TIME), now).abs();
-                int result = diff.compareTo(d);
-                if (result == 0) {
-                    winset.add(e.getKey());
-                }
-                if (result < 0) {
-                    winset.clear();
-                    winset.add(e.getKey());
-                    d = diff;
-                }
-            }
-            
-            handleWinner(winset, d, win);
+        	if(this.state.winonly) {
+        		Set<Entry<String, String>> set = this.state.map.entrySet();
+                set.removeIf((e) -> !e.getValue().equalsIgnoreCase("lose"));
+                
+                Set<String> winset = new HashSet<>();
+                set.forEach((e) -> winset.add(e.getKey()));
+                handleWinner(winset, Duration.ZERO, win);
+        	}
+        	else {
+	            Set<Entry<String, String>> set = this.state.map.entrySet();
+	            LocalDateTime now = LocalDateTime.now().withSecond(0).withNano(0);
+	            Duration d = Duration.ofDays(1);
+	            Set<String> winset = new HashSet<>();
+	            
+	            set.removeIf((e) -> e.getValue().equalsIgnoreCase("win"));
+	            for (Entry<String, String> e : set) {
+	                Duration diff = Duration
+	                        .between(LocalDateTime.parse(e.getValue(), DateTimeFormatter.ISO_LOCAL_DATE_TIME), now).abs();
+	                int result = diff.compareTo(d);
+	                if (result == 0) {
+	                    winset.add(e.getKey());
+	                }
+	                if (result < 0) {
+	                    winset.clear();
+	                    winset.add(e.getKey());
+	                    d = diff;
+	                }
+	            }
+	            handleWinner(winset, d, win);
+        	}
         }
         
         this.state.contestrunning = false;
@@ -352,7 +369,7 @@ public class Contest implements EventObserver {
     
     private boolean addEntry(String username, String message) {
         Matcher m = entrypattern.matcher(message);
-        if (m.matches()) {
+        if (m.matches() && !this.state.winonly) {
             int hours = Integer.parseInt(m.group(1));
             int minutes = Integer.parseInt(m.group(2));
             
@@ -368,6 +385,9 @@ public class Contest implements EventObserver {
             return true;
         } else if (message.equalsIgnoreCase("win")) {
             this.state.map.put(username, "win");
+            return true;
+        } else if (message.equalsIgnoreCase("lose") && this.state.winonly) {
+        	this.state.map.put(username, "lose");
             return true;
         } else {
             return false;
@@ -386,7 +406,7 @@ public class Contest implements EventObserver {
                 String winner = set.iterator().next();
                 ContestBot.getInstance().getConnection()
                         .sendChatMessage(String.format("Der Gewinner ist %s <3", winner));
-                printDuration(d);
+                if(!this.state.winonly) printDuration(d);
                 logger.info(String.format("Die Wette wurde beendet, %s hat gewonnen", winner));
                 break;
             }
@@ -401,17 +421,22 @@ public class Contest implements EventObserver {
                 ContestBot.getInstance().getConnection()
                         .sendChatMessage(String.format("Gewonnen haben: %s <3", s.toString()));
                 logger.info(String.format("Die Wette wurde beendet, %s haben gewonnen", s.toString()));
-                printDuration(d);
+                if(!this.state.winonly) printDuration(d);
             }
         }
         // Punkte
         for (String winner : set) {
             try {
-                if (win) {
-                    SQLite.getInstance().changePoints(winner, 10);
-                } else {
-                    SQLite.getInstance().changePoints(winner,
-                            (int) (d.getSeconds() / 60 <= 4 ? 5 - d.getSeconds() / 60 : 1));
+                if(this.state.winonly) {
+                	SQLite.getInstance().changePoints(winner, 1);
+                }
+                else {
+                	if (win) {
+                        SQLite.getInstance().changePoints(winner, 10);
+                    } else {
+                        SQLite.getInstance().changePoints(winner,
+                                (int) (d.getSeconds() / 60 <= 4 ? 5 - d.getSeconds() / 60 : 1));
+                    }
                 }
             } catch (SQLException e) {
                 logger.error("Could not add Points", e);

@@ -216,7 +216,7 @@ public class General implements EventObserver {
                     if (LockHelper.checkAccess("!commands", ispermitted(m), whisper)) {
                         if (ispermitted(m)) {
                             ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
-                                    "!start, !abort, !stop, !judge, !adjust");
+                                    "!start [win], !abort, !stop, !judge [win], !adjust");
                         }
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
                                 "!points, !leaderboard, !discord, !twitter, !ts, !hardware, !uptime, !ripdevil, !time, !followage, !commands");
