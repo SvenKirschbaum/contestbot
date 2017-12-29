@@ -122,6 +122,13 @@ public class General implements EventObserver {
                     }
                     break;
                 }
+                case "!freundin": {
+                    if (LockHelper.checkAccess("!freundin", ispermitted(m), whisper)) {
+                        ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
+                                "Ja -> https://www.twitch.tv/deruuya");
+                    }
+                    break;
+                }
                 case "!hardware": {
                     if (LockHelper.checkAccess("!hardware", ispermitted(m), whisper)) {
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "GTX 770 2GB");
