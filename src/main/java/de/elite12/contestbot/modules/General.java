@@ -226,7 +226,7 @@ public class General implements EventObserver {
                                     "!start [win], !abort, !stop, !judge [win], !adjust");
                         }
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
-                                "!points, !leaderboard, !discord, !twitter, !ts, !hardware, !uptime, !ripdevil, !time, !followage, !commands");
+                                "!points, !leaderboard, !discord, !twitter, !ts, !hardware, !uptime, !ripdevil, !time, !followage, !freundin, !commands");
                     }
                     break;
                 }
