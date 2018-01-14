@@ -376,7 +376,7 @@ public class Contest implements EventObserver {
                 scheduler.schedule(() -> {
                     ContestBot.getInstance().getConnection().sendPrivatMessage(username,
                             String.format("%d. %s: %d Punkte", j + 1, l.getUsernames()[j], l.getPoints()[j]));
-                }, i, TimeUnit.SECONDS);
+                }, i + 1, TimeUnit.SECONDS);
             }
         } catch (SQLException e) {
             logger.error("Could not get Leaderboard", e);
