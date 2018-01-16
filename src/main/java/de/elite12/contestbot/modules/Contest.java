@@ -121,27 +121,27 @@ public class Contest implements EventObserver {
             if (AuthProvider.checkPrivileged(m.getUsername())) {
                 switch (split[0]) {
                     case "!start": {
-                        startContest(split.length > 1 ? split[1].equalsIgnoreCase("win") : false);
+                        startContest(whisper, m, split.length > 1 ? split[1].equalsIgnoreCase("win") : false);
                         break;
                     }
                     case "!abort": {
-                        abortContest();
+                        abortContest(whisper, m);
                         break;
                     }
                     case "!judge": {
-                        judgeContest(split.length > 1 ? split[1].equalsIgnoreCase("win") : false);
+                        judgeContest(whisper, m, split.length > 1 ? split[1].equalsIgnoreCase("win") : false);
                         break;
                     }
                     case "!stop": {
-                        stopEntries();
+                        stopEntries(whisper, m);
                         break;
                     }
                     case "!adjust": {
-                        adjustPoints(m.getMessage());// TODO: whisper
+                        adjustPoints(whisper, m);// TODO: whisper
                         break;
                     }
                     case "!reset": {
-                        resetLeaderboard(); // TODO: whisper
+                        resetLeaderboard(whisper, m); // TODO: whisper
                         break;
                     }
                 }
@@ -167,10 +167,10 @@ public class Contest implements EventObserver {
         }
     }
 
-    private synchronized void resetLeaderboard() {
+    private synchronized void resetLeaderboard(boolean whisper, Message m) {
         if (this.state.contestrunning) {
-            ContestBot.getInstance().getConnection()
-                    .sendChatMessage("Während einer laufenden Wette kann das Leaderboard nicht resettet werden");
+            ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
+                    "Während einer laufenden Wette kann das Leaderboard nicht resettet werden");
             logger.info("Kann Leaderboard nicht resetten: Wette läuft");
             return;
         }
@@ -180,13 +180,15 @@ public class Contest implements EventObserver {
             ContestBot.getInstance().getConnection().sendChatMessage("Das Leaderboard wurde erfolgreich resettet");
         } catch (SQLException e) {
             logger.error("Resetten des Leaderboards fehlgeschlagen", e);
-            ContestBot.getInstance().getConnection().sendChatMessage("Resetten des Leaderboards fehlgeschlagen");
+            ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
+                    "Resetten des Leaderboards fehlgeschlagen");
         }
     }
 
-    private synchronized void startContest(boolean winonly) {
+    private synchronized void startContest(boolean whisper, Message m, boolean winonly) {
         if (this.state.contestrunning) {
-            ContestBot.getInstance().getConnection().sendChatMessage("Es läuft bereits eine Wette");
+            ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
+                    "Es läuft bereits eine Wette");
             logger.info("Kann keine Wette starten: läuft bereits");
             return;
         }
@@ -216,9 +218,9 @@ public class Contest implements EventObserver {
         logger.info("Wette gestartet");
     }
 
-    private synchronized void abortContest() {
+    private synchronized void abortContest(boolean whisper, Message m) {
         if (!this.state.contestrunning) {
-            ContestBot.getInstance().getConnection().sendChatMessage("Es läuft keine Wette");
+            ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "Es läuft keine Wette");
             logger.info("Kann die Wette nicht abbrechen: Es läuft keine Wette");
             return;
         }
@@ -236,9 +238,9 @@ public class Contest implements EventObserver {
         saveState();
     }
 
-    private synchronized void judgeContest(boolean win) {
+    private synchronized void judgeContest(boolean whisper, Message m, boolean win) {
         if (!this.state.contestrunning) {
-            ContestBot.getInstance().getConnection().sendChatMessage("Es läuft keine Wette");
+            ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "Es läuft keine Wette");
             logger.info("Kann die Wette nicht beenden: Es läuft keine Wette");
             return;
         }
@@ -291,14 +293,15 @@ public class Contest implements EventObserver {
         saveState();
     }
 
-    private synchronized void stopEntries() {
+    private synchronized void stopEntries(boolean whisper, Message m) {
         if (!this.state.contestrunning) {
-            ContestBot.getInstance().getConnection().sendChatMessage("Es läuft keine Wette");
+            ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "Es läuft keine Wette");
             logger.info("Kann die Einträge nicht beenden: Es läuft keine Wette");
             return;
         }
         if (!this.state.open) {
-            ContestBot.getInstance().getConnection().sendChatMessage("Die Wette ist bereits geschlossen");
+            ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
+                    "Die Wette ist bereits geschlossen");
             logger.info("Die Wette ist bereits geschlossen");
             return;
         }
@@ -315,10 +318,10 @@ public class Contest implements EventObserver {
         saveState();
     }
 
-    private void adjustPoints(String message) {
-        String[] split = message.split(" ");
+    private void adjustPoints(boolean whisper, Message message) {
+        String[] split = message.getMessage().split(" ");
         if (split.length != 3) {
-            ContestBot.getInstance().getConnection().sendChatMessage("Ungültige Parameter");
+            ContestBot.getInstance().getConnection().sendMessage(whisper, message.getUsername(), "Ungültige Parameter");
             return;
         }
         String username = split[1];
@@ -326,7 +329,7 @@ public class Contest implements EventObserver {
         try {
             points = Integer.parseInt(split[2]);
         } catch (NumberFormatException e) {
-            ContestBot.getInstance().getConnection().sendChatMessage("Ungültige Parameter");
+            ContestBot.getInstance().getConnection().sendMessage(whisper, message.getUsername(), "Ungültige Parameter");
             return;
         }
 
@@ -336,8 +339,8 @@ public class Contest implements EventObserver {
             logger.error("Cant change points", e);
             return;
         }
-        ContestBot.getInstance().getConnection()
-                .sendChatMessage(String.format("Punkte von %s um %d geändert", username, points));
+        ContestBot.getInstance().getConnection().sendMessage(whisper, message.getUsername(),
+                String.format("Punkte von %s um %d geändert", username, points));
         logger.info(String.format("Punkte von %s um %d geändert", username, points));
     }
 
