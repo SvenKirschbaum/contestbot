@@ -55,18 +55,18 @@ import de.elite12.contestbot.SQLite;
 @Autoload
 @EventTypes({ Events.MESSAGE, Events.WHISPER, Events.SUBSCRIPTION })
 public class General implements EventObserver {
-
+    
     private static Logger logger = Logger.getLogger(General.class);
     private static Pattern pattern = Pattern
             .compile("^(\\w+) haut €(\\d+)\\.(\\d{2}) raus, DerInder dankt! derindWTF$");
-
+    
     private String oauthkey;
     private String channelid;
     private Client client;
-
+    
     public General() {
         this.oauthkey = ContestBot.getInstance().getConfig("oauth").split(":")[1];
-
+        
         this.client = ClientBuilder.newClient().register(new Feature() {
             @Override
             public boolean configure(FeatureContext context) {
@@ -82,21 +82,21 @@ public class General implements EventObserver {
                 return true;
             }
         });
-
+        
         this.channelid = getTwitchUserID(ContestBot.getInstance().getConfig("channelname"));
         logger.debug(String.format("Loaded Channelid %s", this.channelid));
     }
-
+    
     @Override
     public void onEvent(Events type, Event e) {
         boolean whisper = type == Events.WHISPER;
         Message m = (Message) e;
-
+        
         if (type == Events.SUBSCRIPTION) {
             ContestBot.getInstance().getConnection().sendChatMessage("SUBHYPE <3");
             return;
         }
-
+        
         if (m.getMessage().charAt(0) == '!') {
             String[] split = m.getMessage().split(" ", 2);
             split[0] = split[0].toLowerCase();
@@ -165,11 +165,10 @@ public class General implements EventObserver {
                 }
                 case "!ripdevil": {
                     if (!whisper && LockHelper.checkAccess("!ripdevil", ispermitted(m), false)) {
-                        // I know this is a bad hack, but ....
                         try {
-                            SQLite.getInstance().changePoints("!ripdevil", 1);
+                            SQLite.getInstance().changeCounter("!ripdevil", 1);
                             ContestBot.getInstance().getConnection().sendChatMessage(
-                                    String.format("RIP Devil Count: %d", SQLite.getInstance().getPoints("!ripdevil")));
+                                    String.format("RIP Devil Count: %d", SQLite.getInstance().getCounter("!ripdevil")));
                         } catch (SQLException e1) {
                             logger.error("Error in !ripdevil", e1);
                         }
@@ -238,13 +237,13 @@ public class General implements EventObserver {
                 String user = matcher.group(1);
                 Integer euro = Integer.parseInt(matcher.group(2));
                 Integer cent = Integer.parseInt(matcher.group(3));
-
+                
                 ContestBot.getInstance().getConnection().sendChatMessage(String.format("%s <3", user));
                 logger.info(String.format("%s spendet %d.%d€", user, euro, cent));
             }
         }
     }
-
+    
     private String getTwitchUserID(String username) throws WebApplicationException {
         WebTarget target = client.target("https://api.twitch.tv/kraken/users").queryParam("login", username);
         JsonArray a = target.request().get(JsonObject.class).getJsonArray("users");
@@ -254,7 +253,7 @@ public class General implements EventObserver {
             throw new WebApplicationException(404);
         }
     }
-
+    
     private boolean ispermitted(Message m) {
         return (m.getTags().containsKey("mod") ? m.getTags().get("mod").equals("1") : false)
                 || m.getUsername().equalsIgnoreCase(ContestBot.getInstance().getConfig("channelname"));
