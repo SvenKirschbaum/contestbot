@@ -42,6 +42,7 @@ import javax.ws.rs.core.FeatureContext;
 
 import org.apache.log4j.Logger;
 
+import de.elite12.contestbot.AuthProvider;
 import de.elite12.contestbot.ContestBot;
 import de.elite12.contestbot.LockHelper;
 import de.elite12.contestbot.Model.Autoload;
@@ -102,35 +103,35 @@ public class General implements EventObserver {
             split[0] = split[0].toLowerCase();
             switch (split[0]) {
                 case "!discord": {
-                    if (LockHelper.checkAccess("!discord", ispermitted(m), whisper)) {
+                    if (LockHelper.checkAccess("!discord", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
                                 "Discord: https://discord.gg/YmvhsxX");
                     }
                     break;
                 }
                 case "!twitter": {
-                    if (LockHelper.checkAccess("!twitter", ispermitted(m), whisper)) {
+                    if (LockHelper.checkAccess("!twitter", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
                                 "Twitter: https://twitter.com/derinderr");
                     }
                     break;
                 }
                 case "!ts": {
-                    if (LockHelper.checkAccess("!ts", ispermitted(m), whisper)) {
+                    if (LockHelper.checkAccess("!ts", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
                                 "TS ist kacke, benutzt lieber !discord!");
                     }
                     break;
                 }
                 case "!freundin": {
-                    if (LockHelper.checkAccess("!freundin", ispermitted(m), whisper)) {
+                    if (LockHelper.checkAccess("!freundin", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
                                 "Ja -> https://www.twitch.tv/deruuya");
                     }
                     break;
                 }
                 case "!hardware": {
-                    if (LockHelper.checkAccess("!hardware", ispermitted(m), whisper)) {
+                    if (LockHelper.checkAccess("!hardware", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "GTX 770 2GB");
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
                                 "I5 4690 @ 3,7Ghz");
@@ -139,7 +140,7 @@ public class General implements EventObserver {
                     break;
                 }
                 case "!uptime": {
-                    if (LockHelper.checkAccess("!uptime", ispermitted(m), whisper)) {
+                    if (LockHelper.checkAccess("!uptime", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         JsonValue r = this.client.target("https://api.twitch.tv/kraken/streams/").path(this.channelid)
                                 .request().get(JsonObject.class).get("stream");
                         if (r.getValueType() == ValueType.OBJECT) {
@@ -164,7 +165,8 @@ public class General implements EventObserver {
                     break;
                 }
                 case "!ripdevil": {
-                    if (!whisper && LockHelper.checkAccess("!ripdevil", ispermitted(m), false)) {
+                    if (!whisper && LockHelper.checkAccess("!ripdevil", AuthProvider.checkPrivileged(m.getUsername()),
+                            false)) {
                         try {
                             SQLite.getInstance().changeCounter("!ripdevil", 1);
                             ContestBot.getInstance().getConnection().sendChatMessage(
@@ -176,14 +178,15 @@ public class General implements EventObserver {
                     break;
                 }
                 case "!time": {
-                    if (LockHelper.checkAccess("!time", ispermitted(m), whisper)) {
+                    if (LockHelper.checkAccess("!time", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), String.format(
                                 "Es ist %s Uhr!", LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))));
                     }
                     break;
                 }
                 case "!followage": {
-                    if (LockHelper.checkAccess("!followage " + m.getUsername(), ispermitted(m), whisper)) {
+                    if (LockHelper.checkAccess("!followage " + m.getUsername(),
+                            AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         String userid = null;
                         String username = m.getUsername();
                         if (split.length > 1 && !split[1].isEmpty()) {
@@ -219,8 +222,8 @@ public class General implements EventObserver {
                     break;
                 }
                 case "!commands": {
-                    if (LockHelper.checkAccess("!commands", ispermitted(m), whisper)) {
-                        if (ispermitted(m)) {
+                    if (LockHelper.checkAccess("!commands", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
+                        if (AuthProvider.checkPrivileged(m.getUsername())) {
                             ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
                                     "!start [win], !abort, !stop, !judge [win], !adjust, !reset");
                         }
@@ -252,10 +255,5 @@ public class General implements EventObserver {
         } else {
             throw new WebApplicationException(404);
         }
-    }
-    
-    private boolean ispermitted(Message m) {
-        return (m.getTags().containsKey("mod") ? m.getTags().get("mod").equals("1") : false)
-                || m.getUsername().equalsIgnoreCase(ContestBot.getInstance().getConfig("channelname"));
     }
 }
