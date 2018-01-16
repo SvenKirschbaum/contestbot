@@ -3,6 +3,7 @@ package de.elite12.contestbot.modules;
 import de.elite12.contestbot.AuthProvider;
 import de.elite12.contestbot.ContestBot;
 import de.elite12.contestbot.Model.Autoload;
+import de.elite12.contestbot.Model.CallFirst;
 import de.elite12.contestbot.Model.Event;
 import de.elite12.contestbot.Model.EventObserver;
 import de.elite12.contestbot.Model.EventTypes;
@@ -10,6 +11,7 @@ import de.elite12.contestbot.Model.Events;
 import de.elite12.contestbot.Model.Message;
 
 @Autoload
+@CallFirst
 @EventTypes({ Events.MESSAGE })
 public class AuthHook implements EventObserver {
     @Override
