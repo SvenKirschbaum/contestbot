@@ -30,23 +30,23 @@ import org.apache.log4j.Logger;
 import de.elite12.contestbot.Model.Leaderboard;
 
 public class SQLite {
-    
+
     private static final String CREATE_TABLE_STRING = "CREATE TABLE IF NOT EXISTS points(name VARCHAR(60) NOT NULL, points INTEGER NOT NULL, PRIMARY KEY(name));";
     protected Connection con;
     private static Logger logger = Logger.getLogger(SQLite.class);
     private static SQLite instance = null;
-    
+
     private SQLite() {
         this("jdbc:sqlite:points.db");
     }
-    
+
     protected SQLite(String jdbc) {
-        
+
         try {
             Class.forName("org.sqlite.JDBC");
-            
+
             this.con = DriverManager.getConnection(jdbc);
-            
+
             Statement stmnt = this.con.createStatement();
             stmnt.executeUpdate(CREATE_TABLE_STRING);
             stmnt.close();
@@ -54,28 +54,28 @@ public class SQLite {
             logger.fatal("Could not initialize Database", e);
             System.exit(1);
         }
-        
+
     }
-    
+
     public void changePoints(String user, int points) throws SQLException {
         PreparedStatement stmnt = this.con.prepareStatement("UPDATE points SET points = points + ? WHERE name = ?");
         stmnt.setInt(1, points);
-        stmnt.setString(2, user);
+        stmnt.setString(2, user.toLowerCase());
         int rows = stmnt.executeUpdate();
         stmnt.close();
-        
+
         if (rows == 0) {
             PreparedStatement stmnt2 = this.con.prepareStatement("INSERT INTO points (name, points) VALUES (?, ?)");
-            stmnt2.setString(1, user);
+            stmnt2.setString(1, user.toLowerCase());
             stmnt2.setInt(2, points);
             stmnt2.executeUpdate();
             stmnt2.close();
         }
     }
-    
+
     public int getPoints(String name) throws SQLException {
         PreparedStatement stmnt = this.con.prepareStatement("SELECT points FROM points WHERE name = ?");
-        stmnt.setString(1, name);
+        stmnt.setString(1, name.toLowerCase());
         ResultSet rs = stmnt.executeQuery();
         boolean exists = rs.next();
         int ret = 0;
@@ -86,44 +86,44 @@ public class SQLite {
         stmnt.close();
         return ret;
     }
-    
+
     public Leaderboard getLeaderboard(int count) throws SQLException {
         PreparedStatement stmnt = this.con
                 .prepareStatement("SELECT name,points FROM points WHERE name != ? ORDER BY points DESC LIMIT ?");
         stmnt.setString(1, "!ripdevil");
         stmnt.setInt(2, count);
         ResultSet rs = stmnt.executeQuery();
-        
+
         ArrayList<String> usernames = new ArrayList<>();
         ArrayList<Integer> points = new ArrayList<>();
-        
+
         while (rs.next()) {
             usernames.add(rs.getString("name"));
             points.add(rs.getInt("points"));
         }
-        
+
         rs.close();
         stmnt.close();
-        
+
         Leaderboard l = new Leaderboard();
         l.setPoints(points.toArray(new Integer[0]));
         l.setUsernames(usernames.toArray(new String[0]));
         return l;
     }
-    
+
     public static SQLite getInstance() {
         if (SQLite.instance == null) {
             SQLite.instance = new SQLite();
         }
         return SQLite.instance;
     }
-    
+
     @Override
     protected void finalize() throws Throwable {
         this.con.close();
         super.finalize();
     }
-    
+
     public void resetLeaderboard() throws SQLException {
         Statement stmnt = this.con.createStatement();
         stmnt.executeUpdate("DELETE FROM points");
