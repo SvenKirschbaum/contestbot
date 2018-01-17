@@ -207,16 +207,19 @@ public class Contest implements EventObserver {
                     "Dieser Wettyp hat keine Verteilung");
             return;
         }
+        ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), getdistributionString());
+    }
+    
+    private String getdistributionString() {
         Set<Entry<String, String>> set = new HashSet<>(this.state.map.entrySet());
         double size = set.size();
-        if (size < 0.9) {
-            ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "Es gibt keine Teilnehmer");
-            return;
-        }
         set.removeIf((e) -> !e.getValue().equalsIgnoreCase("lose"));
         double lose = set.size();
-        ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
-                String.format("Es steht %.2f%% win zu %.2f%% lose", (1 - lose / size) * 100, lose / size * 100));
+        if (size < 0.9) {
+            size = 2;
+            lose = 1;
+        }
+        return String.format("Es steht %.2f%% win zu %.2f%% lose", (1 - lose / size) * 100, lose / size * 100);
     }
     
     private synchronized void resetLeaderboard(boolean whisper, Message m) {
@@ -254,6 +257,7 @@ public class Contest implements EventObserver {
             saveState();
             ContestBot.getInstance().getConnection()
                     .sendChatMessage(String.format("Einsendeschluss: %d Teilnehmer", this.state.map.size()));
+            ContestBot.getInstance().getConnection().sendChatMessage(getdistributionString());
             logger.info(String.format("Einsendeschluss: %d Teilnehmer", this.state.map.size()));
         }, 3, TimeUnit.MINUTES);
         
@@ -367,6 +371,7 @@ public class Contest implements EventObserver {
                 .format("Die Einsendungen wurden vorzeitig beendet, es gab %d Teilnehmer", this.state.map.size()));
         logger.info(String.format("Die Einsendungen wurden vorzeitig beendet, es gab %d Teilnehmer",
                 this.state.map.size()));
+        ContestBot.getInstance().getConnection().sendChatMessage(getdistributionString());
         saveState();
     }
     
