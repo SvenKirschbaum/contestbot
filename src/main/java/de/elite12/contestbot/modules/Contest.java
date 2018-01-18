@@ -149,8 +149,11 @@ public class Contest implements EventObserver {
             // User Commands
             switch (split[0]) {
                 case "!points": {
-                    sendPoints(m.getUsername());
-                    break;
+                    if (LockHelper.checkAccess("!points " + m.getUsername(),
+                            AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
+                        sendPoints(whisper, m);
+                        break;
+                    }
                 }
                 case "!leaderboard": {
                     if (LockHelper.checkAccess("!leaderboard", AuthProvider.checkPrivileged(m.getUsername()),
@@ -401,15 +404,22 @@ public class Contest implements EventObserver {
         logger.info(String.format("Punkte von %s um %d geändert", username, points));
     }
     
-    private void sendPoints(String username) {
-        logger.debug("Sending points to " + username);
+    private void sendPoints(boolean whisper, Message m) {
+        String userid = null;
+        String username = m.getUsername();
+        String[] split = m.getMessage().split(" ", 2);
+        if (split.length > 1 && !split[1].isEmpty()) {
+            username = split[1];
+        }
+
         try {
             int points = SQLite.getInstance().getPoints(username);
             if (points != 1) {
-                ContestBot.getInstance().getConnection().sendPrivatMessage(username,
-                        String.format("Du hast aktuell %d Punkte!", points));
+                ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
+                        String.format("@%s hat aktuell %d Punkte!", username, points));
             } else {
-                ContestBot.getInstance().getConnection().sendPrivatMessage(username, "Du hast aktuell einen Punkt!");
+                ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
+                        String.format("@%s hat aktuell einen Punkt!", username, points));
             }
         } catch (SQLException e) {
             logger.error("Unable to get Points", e);
