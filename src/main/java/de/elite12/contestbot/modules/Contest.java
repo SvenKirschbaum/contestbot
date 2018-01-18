@@ -152,8 +152,8 @@ public class Contest implements EventObserver {
                     if (LockHelper.checkAccess("!points " + m.getUsername(),
                             AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         sendPoints(whisper, m);
-                        break;
                     }
+                    break;
                 }
                 case "!leaderboard": {
                     if (LockHelper.checkAccess("!leaderboard", AuthProvider.checkPrivileged(m.getUsername()),
