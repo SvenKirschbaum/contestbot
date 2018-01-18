@@ -72,7 +72,6 @@ public class Viewer implements EventObserver {
             }
         }));
 
-        // Load current viewers
         scheduler.scheduleWithFixedDelay(() -> {
             JsonValue r = General.client.target("https://api.twitch.tv/kraken/streams/").path(General.channelid)
                     .request().get(JsonObject.class).get("stream");
@@ -90,6 +89,8 @@ public class Viewer implements EventObserver {
                 }
             }
         }, 0, 5, TimeUnit.MINUTES);
+
+        // Load current viewers
         JsonObject viewerobject = General.client.target("https://tmi.twitch.tv/group/user/")
                 .path(ContestBot.getInstance().getConfig("channelname")).path("chatters").request()
                 .get(JsonObject.class).getJsonObject("chatters");
@@ -209,7 +210,7 @@ public class Viewer implements EventObserver {
                             Logger.getLogger(this.getClass()).error("Error adding Viewerpoints", e);
                         }
                     }
-                    return v;
+                    return i;
                 });
             });
         }
