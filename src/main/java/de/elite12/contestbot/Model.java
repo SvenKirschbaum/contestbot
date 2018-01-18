@@ -490,7 +490,9 @@ public class Model {
         TIMEOUT,
         HOST,
         ROOMSTATE,
-        SUBSCRIPTION
+        SUBSCRIPTION,
+        JOIN,
+        PART
     }
     
     // implemented by the model class of every observable event
