@@ -33,7 +33,7 @@ import de.elite12.contestbot.modules.TestModule;
 
 public class ContestBotTest {
     
-    private static ContestBot c;
+    protected static ContestBot c;
     
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {

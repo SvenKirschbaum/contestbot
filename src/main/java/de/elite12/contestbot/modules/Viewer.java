@@ -237,7 +237,7 @@ public class Viewer implements EventObserver {
         ConcurrentHashMap<String, Integer> map;
 
         public ViewerData() {
-            this.map = new ConcurrentHashMap();
+            this.map = new ConcurrentHashMap<>();
         }
     }
 }
