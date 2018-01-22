@@ -153,7 +153,6 @@ public class SQLite {
     @Override
     protected void finalize() throws Throwable {
         this.con.close();
-        super.finalize();
     }
     
     public void resetLeaderboard() throws SQLException {
