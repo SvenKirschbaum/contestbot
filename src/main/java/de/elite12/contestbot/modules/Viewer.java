@@ -111,7 +111,8 @@ public class Viewer implements EventObserver {
         viewers.forEach(setadd);
 
         viewerset.remove(ContestBot.getInstance().getConfig("login").toLowerCase());
-
+        viewerset.remove(ContestBot.getInstance().getConfig("channelname").toLowerCase());
+        
         // Schedule adding viewtime
         scheduler.scheduleAtFixedRate(() -> {
             addViewTime();
@@ -128,7 +129,8 @@ public class Viewer implements EventObserver {
         switch (type) {
             case JOIN: {
                 Logger.getLogger(Viewer.class).debug("JOIN: " + m.getUsername());
-                if (!m.getUsername().equalsIgnoreCase(ContestBot.getInstance().getConfig("login"))) {
+                if (!m.getUsername().equalsIgnoreCase(ContestBot.getInstance().getConfig("login"))
+                        && !m.getUsername().equalsIgnoreCase(ContestBot.getInstance().getConfig("channelname"))) {
                     viewerset.add(m.getUsername().toLowerCase());
                 }
                 break;
