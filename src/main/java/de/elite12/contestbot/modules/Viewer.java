@@ -40,13 +40,13 @@ import de.elite12.contestbot.SQLite;
 @Autoload
 @EventTypes({ Events.JOIN, Events.PART, Events.MESSAGE, Events.WHISPER })
 public class Viewer implements EventObserver {
-    
+
     private boolean live = false;
-    
+
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private Set<String> viewerset = new HashSet<>();
     private ViewerData viewerdata;
-    
+
     public Viewer() {
         // Load Viewerdata
         try {
@@ -59,19 +59,19 @@ public class Viewer implements EventObserver {
         } catch (IOException | ClassNotFoundException e) {
             Logger.getLogger(Viewer.class).error("Could not load viewerdata", e);
         }
-
+        
         if (this.viewerdata == null) {
             this.viewerdata = new ViewerData();
         }
-
+        
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-
+            
             @Override
             public void run() {
                 saveState();
             }
         }));
-
+        
         scheduler.scheduleWithFixedDelay(() -> {
             JsonValue r = General.client.target("https://api.twitch.tv/kraken/streams/").path(General.channelid)
                     .request().get(JsonObject.class).get("stream");
@@ -89,7 +89,7 @@ public class Viewer implements EventObserver {
                 }
             }
         }, 0, 5, TimeUnit.MINUTES);
-
+        
         // Load current viewers
         JsonObject viewerobject = General.client.target("https://tmi.twitch.tv/group/user/")
                 .path(ContestBot.getInstance().getConfig("channelname")).path("chatters").request()
@@ -99,34 +99,38 @@ public class Viewer implements EventObserver {
         JsonArray admins = viewerobject.getJsonArray("admins");
         JsonArray global_mods = viewerobject.getJsonArray("global_mods");
         JsonArray viewers = viewerobject.getJsonArray("viewers");
-        
+
         Consumer<JsonValue> setadd = (v) -> {
             viewerset.add(((JsonString) v).getString().toLowerCase());
         };
-        
+
         moderators.forEach(setadd);
         staff.forEach(setadd);
         admins.forEach(setadd);
         global_mods.forEach(setadd);
         viewers.forEach(setadd);
-        
+
+        viewerset.remove(ContestBot.getInstance().getConfig("login").toLowerCase());
+
         // Schedule adding viewtime
         scheduler.scheduleAtFixedRate(() -> {
             addViewTime();
         }, 1, 1, TimeUnit.MINUTES);
-        
+
         scheduler.scheduleAtFixedRate(() -> {
             saveState();
         }, 15, 15, TimeUnit.MINUTES);
     }
-
+    
     @Override
     public void onEvent(Events type, Event e) {
         Message m = (Message) e;
         switch (type) {
             case JOIN: {
                 Logger.getLogger(Viewer.class).debug("JOIN: " + m.getUsername());
-                viewerset.add(m.getUsername().toLowerCase());
+                if (!m.getUsername().equalsIgnoreCase(ContestBot.getInstance().getConfig("login"))) {
+                    viewerset.add(m.getUsername().toLowerCase());
+                }
                 break;
             }
             case PART: {
@@ -144,12 +148,12 @@ public class Viewer implements EventObserver {
             }
         }
     }
-
+    
     private void handleMessage(boolean whisper, Message m) {
         if (m.getMessage().startsWith("!")) {
             String[] split = m.getMessage().split(" ", 2);
             split[0] = split[0].toLowerCase();
-            
+
             // Mod Commands
             if (AuthProvider.checkPrivileged(m.getUsername())) {
                 switch (split[0]) {
@@ -170,14 +174,14 @@ public class Viewer implements EventObserver {
             }
         }
     }
-    
+
     private void sendViewTime(boolean whisper, Message m) {
         String username = m.getUsername();
         String[] split = m.getMessage().split(" ", 2);
         if (split.length > 1 && !split[1].isEmpty()) {
             username = split[1];
         }
-
+        
         Integer t = this.viewerdata.map.get(username);
         if (t == null) {
             t = 0;
@@ -196,7 +200,7 @@ public class Viewer implements EventObserver {
                     String.format("@%s hat bereits %d Minuten bei Beanie verschwendet", username, d.getSeconds() / 60));
         }
     }
-
+    
     private void addViewTime() {
         if (live) {
             this.viewerset.forEach((s) -> {
@@ -215,7 +219,7 @@ public class Viewer implements EventObserver {
             });
         }
     }
-
+    
     private void saveState() {
         synchronized (viewerdata) {
             try {
@@ -230,12 +234,12 @@ public class Viewer implements EventObserver {
             }
         }
     }
-    
+
     private static class ViewerData implements Serializable {
         private static final long serialVersionUID = 1L;
-
+        
         ConcurrentHashMap<String, Integer> map;
-
+        
         public ViewerData() {
             this.map = new ConcurrentHashMap();
         }
