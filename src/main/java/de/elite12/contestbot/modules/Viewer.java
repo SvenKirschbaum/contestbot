@@ -166,8 +166,8 @@ public class Viewer implements EventObserver {
             }
             // User Commands
             switch (split[0]) {
-                case "!viewtime": {
-                    if (LockHelper.checkAccess("!viewtime " + m.getUsername(),
+                case "!watchtime": {
+                    if (LockHelper.checkAccess("!watchtime " + m.getUsername(),
                             AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         sendViewTime(whisper, m);
                         break;

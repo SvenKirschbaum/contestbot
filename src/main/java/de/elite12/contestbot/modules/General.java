@@ -56,18 +56,18 @@ import de.elite12.contestbot.SQLite;
 @Autoload
 @EventTypes({ Events.MESSAGE, Events.WHISPER, Events.SUBSCRIPTION })
 public class General implements EventObserver {
-    
+
     private static Logger logger = Logger.getLogger(General.class);
     private static Pattern pattern = Pattern
             .compile("^(\\w+) haut €(\\d+)\\.(\\d{2}) raus, DerInder dankt! derindWTF$");
-    
+
     private static String oauthkey;
     public static String channelid;
     public static Client client;
-    
+
     static {
         General.oauthkey = ContestBot.getInstance().getConfig("oauth").split(":")[1];
-        
+
         General.client = ClientBuilder.newClient().register(new Feature() {
             @Override
             public boolean configure(FeatureContext context) {
@@ -83,25 +83,25 @@ public class General implements EventObserver {
                 return true;
             }
         });
-        
+
         General.channelid = getTwitchUserID(ContestBot.getInstance().getConfig("channelname"));
         logger.debug(String.format("Loaded Channelid %s", General.channelid));
     }
-    
+
     public General() {
         //
     }
-    
+
     @Override
     public void onEvent(Events type, Event e) {
         boolean whisper = type == Events.WHISPER;
         Message m = (Message) e;
-        
+
         if (type == Events.SUBSCRIPTION) {
             ContestBot.getInstance().getConnection().sendChatMessage("SUBHYPE <3");
             return;
         }
-        
+
         if (m.getMessage().charAt(0) == '!') {
             String[] split = m.getMessage().split(" ", 2);
             split[0] = split[0].toLowerCase();
@@ -232,7 +232,7 @@ public class General implements EventObserver {
                                     "!start [win], !abort, !stop, !judge [win], !adjust, !reset");
                         }
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
-                                "!points, !leaderboard, !verteilung, !teilnehmer, !discord, !twitter, !ts, !hardware, !uptime, !ripdevil, !time, !followage, !freundin, !commands");
+                                "!points, !leaderboard, !verteilung, !teilnehmer, !discord, !twitter, !ts, !hardware, !uptime, !ripdevil, !time, !followage, !freundin, !watchtime, !commands");
                     }
                     break;
                 }
@@ -244,13 +244,13 @@ public class General implements EventObserver {
                 String user = matcher.group(1);
                 Integer euro = Integer.parseInt(matcher.group(2));
                 Integer cent = Integer.parseInt(matcher.group(3));
-                
+
                 ContestBot.getInstance().getConnection().sendChatMessage(String.format("%s <3", user));
                 logger.info(String.format("%s spendet %d.%d€", user, euro, cent));
             }
         }
     }
-    
+
     private static String getTwitchUserID(String username) throws WebApplicationException {
         WebTarget target = client.target("https://api.twitch.tv/kraken/users").queryParam("login", username);
         JsonArray a = target.request().get(JsonObject.class).getJsonArray("users");
