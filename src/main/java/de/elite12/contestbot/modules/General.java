@@ -225,6 +225,12 @@ public class General implements EventObserver {
                     }
                     break;
                 }
+                case "!sr": {
+                	 if (LockHelper.checkAccess("!sr", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
+                		 ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),"Songrequests: https://musikbot.elite12.de/ (YouTube & Spotify)");
+                	 }
+                	 break;
+                }
                 case "!commands": {
                     if (LockHelper.checkAccess("!commands", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         if (AuthProvider.checkPrivileged(m.getUsername())) {
@@ -232,7 +238,7 @@ public class General implements EventObserver {
                                     "!start [win], !abort, !stop, !judge [win], !adjust, !reset");
                         }
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
-                                "!points, !leaderboard, !verteilung, !teilnehmer, !discord, !twitter, !ts, !hardware, !uptime, !ripdevil, !time, !followage, !freundin, !watchtime, !commands");
+                                "!points, !leaderboard, !verteilung, !teilnehmer, !discord, !twitter, !ts, !hardware, !uptime, !ripdevil, !time, !followage, !freundin, !sr, !watchtime, !commands");
                     }
                     break;
                 }
