@@ -227,7 +227,7 @@ public class General implements EventObserver {
                 }
                 case "!sr": {
                 	 if (LockHelper.checkAccess("!sr", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
-                		 ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),"Songrequests: https://musikbot.elite12.de/ (YouTube & Spotify)");
+                		 ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),"Songrequests hier einreichen: https://musikbot.elite12.de/ (YouTube & Spotify)");
                 	 }
                 	 break;
                 }
