@@ -59,7 +59,7 @@ public class General implements EventObserver {
 
     private static Logger logger = Logger.getLogger(General.class);
     private static Pattern pattern = Pattern
-            .compile("^(\\w+) haut €(\\d+)\\.(\\d{2}) raus, DerInder dankt! derindWTF$");
+            .compile("^(\\w+) haut €(\\d+)\\.(\\d{2}) raus, Beanie dankt! derindWTF$");
 
     private static String oauthkey;
     public static String channelid;
