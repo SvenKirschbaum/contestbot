@@ -116,7 +116,7 @@ public class General implements EventObserver {
                 case "!twitter": {
                     if (LockHelper.checkAccess("!twitter", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
-                                "Twitter: https://twitter.com/derinderr");
+                                "Twitter: https://twitter.com/ezbeanie");
                     }
                     break;
                 }
