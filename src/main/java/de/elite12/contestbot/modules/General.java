@@ -139,7 +139,7 @@ public class General implements EventObserver {
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "GTX 770 2GB");
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
                                 "I5 4690 @ 3,7Ghz");
-                        ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "8GB DDR3 RAM");
+                        ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "12GB DDR3 1600Mhz");
                     }
                     break;
                 }
