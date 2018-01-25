@@ -260,7 +260,9 @@ public class Contest implements EventObserver {
             saveState();
             ContestBot.getInstance().getConnection()
                     .sendChatMessage(String.format("Einsendeschluss: %d Teilnehmer", this.state.map.size()));
-            ContestBot.getInstance().getConnection().sendChatMessage(getdistributionString());
+            if(this.state.winonly) {
+            	ContestBot.getInstance().getConnection().sendChatMessage(getdistributionString());
+            }
             logger.info(String.format("Einsendeschluss: %d Teilnehmer", this.state.map.size()));
         }, 3, TimeUnit.MINUTES);
 
@@ -374,7 +376,9 @@ public class Contest implements EventObserver {
                 .format("Die Einsendungen wurden vorzeitig beendet, es gab %d Teilnehmer", this.state.map.size()));
         logger.info(String.format("Die Einsendungen wurden vorzeitig beendet, es gab %d Teilnehmer",
                 this.state.map.size()));
-        ContestBot.getInstance().getConnection().sendChatMessage(getdistributionString());
+        if(this.state.winonly) {
+        	ContestBot.getInstance().getConnection().sendChatMessage(getdistributionString());
+        }
         saveState();
     }
 
