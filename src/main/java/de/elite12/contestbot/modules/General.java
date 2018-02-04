@@ -235,11 +235,12 @@ public class General implements EventObserver {
                 	 if (LockHelper.checkAccess("!sr " + m.getUsername(), AuthProvider.checkPrivileged(m.getUsername()), false, 6)) {
 						
 						if (split.length > 1 && !split[1].isEmpty()) {
+							HttpsURLConnection conn;
 							try {
 							
 								URL url = new URL("https://musikbot.elite12.de/api/songs");
 								
-								HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+								conn = (HttpsURLConnection) url.openConnection();
 								conn.setRequestMethod("POST");
 								conn.setRequestProperty("Content-Type", "text/plain");
 								conn.setRequestProperty("User-Agent", "ContestBot");
@@ -249,8 +250,16 @@ public class General implements EventObserver {
 								writer.write(split[1]);
 								writer.flush();
 								
-								BufferedReader reader = new BufferedReader(
-				                          new InputStreamReader(conn.getInputStream()) );
+								BufferedReader reader;
+								int statusCode = conn.getResponseCode();
+								if(statusCode >= 200 && statusCode < 300) {
+									reader = new BufferedReader(
+					                          new InputStreamReader(conn.getInputStream()) );
+								}
+								else {
+									reader = new BufferedReader(
+					                          new InputStreamReader(conn.getErrorStream()) );
+								}
 								ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),reader.readLine());
 				
 								reader.close();
