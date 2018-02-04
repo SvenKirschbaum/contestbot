@@ -12,7 +12,7 @@ public class LockHelper {
 	private static Object lock = new Object();
 	private static ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 	
-	public static boolean checkAccess(String key, boolean ispermitted, boolean whisper) {
+	public static boolean checkAccess(String key, boolean ispermitted, boolean whisper, int time) {
 		if(whisper) return true;
 		synchronized (LockHelper.lock) {
 			if(ispermitted) {
@@ -21,7 +21,7 @@ public class LockHelper {
 					LockHelper.locks.get(key).setLocked(true);
 					LockHelper.locks.get(key).setTimer(LockHelper.scheduler.schedule(() -> {
 						LockHelper.locks.get(key).setLocked(false);
-					}, 3, TimeUnit.MINUTES));
+					}, time, TimeUnit.MINUTES));
 					return true;
 				}
 				else {
@@ -29,7 +29,7 @@ public class LockHelper {
 					LockHelper.locks.get(key).setLocked(true);
 					LockHelper.locks.get(key).setTimer(LockHelper.scheduler.schedule(() -> {
 						LockHelper.locks.get(key).setLocked(false);
-					}, 3, TimeUnit.MINUTES));
+					}, time, TimeUnit.MINUTES));
 					return true;
 				}
 			}
@@ -39,7 +39,7 @@ public class LockHelper {
 					LockHelper.locks.get(key).setLocked(true);
 					LockHelper.locks.get(key).setTimer(LockHelper.scheduler.schedule(() -> {
 						LockHelper.locks.get(key).setLocked(false);
-					}, 3, TimeUnit.MINUTES));
+					}, time, TimeUnit.MINUTES));
 					return true;
 				}
 				else {
@@ -47,11 +47,14 @@ public class LockHelper {
 					LockHelper.locks.get(key).setLocked(true);
 					LockHelper.locks.get(key).setTimer(LockHelper.scheduler.schedule(() -> {
 						LockHelper.locks.get(key).setLocked(false);
-					}, 3, TimeUnit.MINUTES));
+					}, time, TimeUnit.MINUTES));
 					return true;
 				}
 			}
 		}
+	}
+	public static boolean checkAccess(String key, boolean ispermitted, boolean whisper) {
+		return checkAccess(key, ispermitted, whisper, 3);
 	}
 	
 	private static class CommandLock {
