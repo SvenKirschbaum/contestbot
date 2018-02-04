@@ -16,7 +16,12 @@
  ******************************************************************************/
 package de.elite12.contestbot.modules;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.URL;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
@@ -31,6 +36,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 import javax.json.JsonValue.ValueType;
+import javax.net.ssl.HttpsURLConnection;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -227,7 +233,35 @@ public class General implements EventObserver {
                 }
                 case "!sr": {
                 	 if (LockHelper.checkAccess("!sr", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
-                		 ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),"Songrequests hier einreichen: https://musikbot.elite12.de/ (YouTube & Spotify)");
+						
+						if (split.length > 1 && !split[1].isEmpty()) {
+							try {
+							
+								URL url = new URL("https://musikbot.elite12.de/api/songs");
+								
+								HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+								conn.setRequestMethod("POST");
+								conn.setRequestProperty("Content-Type", "text/plain");
+								conn.setRequestProperty("User-Agent", "ContestBot");
+								conn.setDoOutput(true);
+								conn.setDoInput(true);
+								OutputStreamWriter writer = new OutputStreamWriter( conn.getOutputStream() );
+								writer.write(split[1]);
+								writer.flush();
+								
+								BufferedReader reader = new BufferedReader(
+				                          new InputStreamReader(conn.getInputStream()) );
+								ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),reader.readLine());
+				
+								reader.close();
+								writer.close();
+							} catch (Exception ex) {
+								Logger.getLogger(General.class).error("Fehler bei !sr",ex);
+							}
+						}
+						else {
+							ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),"Songrequests hier einreichen: https://musikbot.elite12.de/ (YouTube & Spotify)");
+						}
                 	 }
                 	 break;
                 }
