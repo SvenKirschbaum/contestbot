@@ -232,7 +232,7 @@ public class General implements EventObserver {
                     break;
                 }
                 case "!sr": {
-                	 if (LockHelper.checkAccess("!sr " + m.getUsername(), AuthProvider.checkPrivileged(m.getUsername()), false, 6)) {
+                	 if (LockHelper.checkAccess("!sr " + m.getUsername(), AuthProvider.checkPrivileged(m.getUsername()), false, 1)) {
 						
 						if (split.length > 1 && !split[1].isEmpty()) {
 							HttpsURLConnection conn;
