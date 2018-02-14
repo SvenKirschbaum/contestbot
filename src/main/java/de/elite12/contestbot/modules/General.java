@@ -133,13 +133,6 @@ public class General implements EventObserver {
                     }
                     break;
                 }
-                case "!freundin": {
-                    if (LockHelper.checkAccess("!freundin", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
-                        ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
-                                "Ja -> https://www.twitch.tv/deruuya");
-                    }
-                    break;
-                }
                 case "!hardware": {
                     if (LockHelper.checkAccess("!hardware", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(), "GTX 770 2GB");
@@ -281,7 +274,7 @@ public class General implements EventObserver {
                                     "!start [win], !abort, !stop, !judge [win], !adjust, !reset");
                         }
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
-                                "!points, !leaderboard, !verteilung, !teilnehmer, !discord, !twitter, !ts, !hardware, !uptime, !ripdevil, !time, !followage, !freundin, !sr, !watchtime, !commands");
+                                "!points, !leaderboard, !verteilung, !teilnehmer, !discord, !twitter, !ts, !hardware, !uptime, !ripdevil, !time, !followage, !sr, !watchtime, !commands");
                     }
                     break;
                 }
