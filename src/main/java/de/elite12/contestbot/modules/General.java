@@ -237,6 +237,7 @@ public class General implements EventObserver {
 								conn.setRequestMethod("POST");
 								conn.setRequestProperty("Content-Type", "text/plain");
 								conn.setRequestProperty("User-Agent", "ContestBot");
+								conn.setRequestProperty("User", m.getUsername().toLowerCase());
 								conn.setDoOutput(true);
 								conn.setDoInput(true);
 								OutputStreamWriter writer = new OutputStreamWriter( conn.getOutputStream() );
