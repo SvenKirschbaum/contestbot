@@ -225,7 +225,7 @@ public class General implements EventObserver {
                     break;
                 }
                 case "!sr": {
-                	 if (LockHelper.checkAccess("!sr " + m.getUsername(), AuthProvider.checkPrivileged(m.getUsername()), false, 1)) {
+                	 //if (LockHelper.checkAccess("!sr " + m.getUsername(), AuthProvider.checkPrivileged(m.getUsername()), false, 1)) {
 						
 						if (split.length > 1 && !split[1].isEmpty()) {
 							HttpsURLConnection conn;
@@ -265,7 +265,7 @@ public class General implements EventObserver {
 						else {
 							ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),"Songrequests hier einreichen: https://musikbot.elite12.de/ (YouTube & Spotify)");
 						}
-                	 }
+                	 //}
                 	 break;
                 }
                 case "!commands": {
