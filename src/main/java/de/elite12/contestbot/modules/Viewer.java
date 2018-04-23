@@ -73,8 +73,9 @@ public class Viewer implements EventObserver {
         }));
         
         scheduler.scheduleWithFixedDelay(() -> {
-            JsonValue r = General.client.target("https://api.twitch.tv/kraken/streams/").path(General.channelid)
-                    .request().get(JsonObject.class).get("stream");
+             JsonObject g = General.client.target("https://api.twitch.tv/kraken/streams/").path(General.channelid)
+                    .request().get(JsonObject.class);
+             JsonValue r = g.get("stream");
             if (r.getValueType() == ValueType.OBJECT) {
                 // LIVE
                 if (!this.live) {

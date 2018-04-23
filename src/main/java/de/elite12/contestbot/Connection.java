@@ -96,4 +96,12 @@ public class Connection extends WebSocketClient {
             sendChatMessage(message);
         }
     }
+    
+    @Override
+    public void send(String txt) {
+    	if (Logger.getLogger(Connection.class).isDebugEnabled()) {
+    		Logger.getLogger(Connection.class).debug(String.format("Sending Message: %s", txt));
+        }
+    	super.send(txt);
+    }
 }
