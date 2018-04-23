@@ -41,6 +41,8 @@ public class Connection extends WebSocketClient {
             SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
             this.setSocket(sslSocketFactory.createSocket());
             this.setTcpNoDelay(true);
+            this.setConnectionLostTimeout(60);
+            this.getSocket().setKeepAlive(true);
         } catch (IOException | NoSuchAlgorithmException | KeyManagementException e) {
             Logger.getLogger(Connection.class).fatal("Can not build Socket", e);
             System.exit(1);
