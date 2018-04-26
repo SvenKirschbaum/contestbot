@@ -272,12 +272,20 @@ public class General implements EventObserver {
                     if (LockHelper.checkAccess("!commands", AuthProvider.checkPrivileged(m.getUsername()), whisper)) {
                         if (AuthProvider.checkPrivileged(m.getUsername())) {
                             ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
-                                    "!start [win], !abort, !stop, !judge [win], !adjust, !reset");
+                                    "!start [win], !abort, !stop, !judge [win], !adjust, !reset, !say");
                         }
                         ContestBot.getInstance().getConnection().sendMessage(whisper, m.getUsername(),
                                 "!points, !leaderboard, !verteilung, !teilnehmer, !discord, !twitter, !ts, !hardware, !uptime, !ripdevil, !time, !followage, !sr, !watchtime, !commands");
                     }
                     break;
+                }
+                case "!say": {
+                	if (AuthProvider.checkPrivileged(m.getUsername())) {
+                		if (split.length > 1 && !split[1].isEmpty()) {
+                			ContestBot.getInstance().getConnection().sendChatMessage(split[1]);
+                		}
+                	}
+                	break;
                 }
             }
         }
