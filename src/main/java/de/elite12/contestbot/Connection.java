@@ -32,7 +32,7 @@ import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.handshake.ServerHandshake;
 
 public class Connection extends WebSocketClient {
-
+	private boolean closed = false;
     public Connection() throws URISyntaxException {
         super(new URI(ContestBot.getInstance().getConfig("ircserver")), new Draft_6455(), null, 5000);
         try {
@@ -51,10 +51,15 @@ public class Connection extends WebSocketClient {
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        Logger.getLogger(Connection.class)
+    	synchronized (this) {
+			if(!closed) {
+		        Logger.getLogger(Connection.class)
                 .warn(String.format("Lost connection. Code [%d] Reason [%s] Remote[%b]", code, reason, remote));
 
-        ContestBot.getInstance().reconnect();
+		        ContestBot.getInstance().reconnect();
+		        this.closed = true;
+			}
+		}
     }
 
     @Override
