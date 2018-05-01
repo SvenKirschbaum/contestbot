@@ -72,6 +72,7 @@ public class Viewer implements EventObserver {
             }
         }));
         
+        
         scheduler.scheduleWithFixedDelay(() -> {
              JsonObject g = General.client.target("https://api.twitch.tv/kraken/streams/").path(General.channelid)
                     .request().get(JsonObject.class);
@@ -91,28 +92,31 @@ public class Viewer implements EventObserver {
             }
         }, 0, 5, TimeUnit.MINUTES);
         
-        // Load current viewers
-        JsonObject viewerobject = General.client.target("https://tmi.twitch.tv/group/user/")
-                .path(ContestBot.getInstance().getConfig("channelname")).path("chatters").request()
-                .get(JsonObject.class).getJsonObject("chatters");
-        JsonArray moderators = viewerobject.getJsonArray("moderators");
-        JsonArray staff = viewerobject.getJsonArray("staff");
-        JsonArray admins = viewerobject.getJsonArray("admins");
-        JsonArray global_mods = viewerobject.getJsonArray("global_mods");
-        JsonArray viewers = viewerobject.getJsonArray("viewers");
+        
+        scheduler.submit(() -> {
+        	// Load current viewers
+            JsonObject viewerobject = General.client.target("https://tmi.twitch.tv/group/user/")
+                    .path(ContestBot.getInstance().getConfig("channelname")).path("chatters").request()
+                    .get(JsonObject.class).getJsonObject("chatters");
+            JsonArray moderators = viewerobject.getJsonArray("moderators");
+            JsonArray staff = viewerobject.getJsonArray("staff");
+            JsonArray admins = viewerobject.getJsonArray("admins");
+            JsonArray global_mods = viewerobject.getJsonArray("global_mods");
+            JsonArray viewers = viewerobject.getJsonArray("viewers");
 
-        Consumer<JsonValue> setadd = (v) -> {
-            viewerset.add(((JsonString) v).getString().toLowerCase());
-        };
+            Consumer<JsonValue> setadd = (v) -> {
+                viewerset.add(((JsonString) v).getString().toLowerCase());
+            };
 
-        moderators.forEach(setadd);
-        staff.forEach(setadd);
-        admins.forEach(setadd);
-        global_mods.forEach(setadd);
-        viewers.forEach(setadd);
+            moderators.forEach(setadd);
+            staff.forEach(setadd);
+            admins.forEach(setadd);
+            global_mods.forEach(setadd);
+            viewers.forEach(setadd);
 
-        viewerset.remove(ContestBot.getInstance().getConfig("login").toLowerCase());
-        viewerset.remove(ContestBot.getInstance().getConfig("channelname").toLowerCase());
+            viewerset.remove(ContestBot.getInstance().getConfig("login").toLowerCase());
+            viewerset.remove(ContestBot.getInstance().getConfig("channelname").toLowerCase());
+        });
         
         // Schedule adding viewtime
         scheduler.scheduleAtFixedRate(() -> {
