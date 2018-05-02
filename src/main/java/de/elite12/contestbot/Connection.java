@@ -33,82 +33,85 @@ import org.java_websocket.handshake.ServerHandshake;
 
 public class Connection extends WebSocketClient {
 	private boolean closed = false;
-    public Connection() throws URISyntaxException {
-        super(new URI(ContestBot.getInstance().getConfig("ircserver")), new Draft_6455(), null, 5000);
-        try {
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, null, null);
-            SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
-            this.setSocket(sslSocketFactory.createSocket());
-            this.setTcpNoDelay(true);
-            this.setConnectionLostTimeout(60);
-            this.getSocket().setKeepAlive(true);
-        } catch (IOException | NoSuchAlgorithmException | KeyManagementException e) {
-            Logger.getLogger(Connection.class).fatal("Can not build Socket", e);
-            System.exit(1);
-        }
-    }
 
-    @Override
-    public void onClose(int code, String reason, boolean remote) {
-    	synchronized (this) {
-			if(!closed) {
-		        Logger.getLogger(Connection.class)
-                .warn(String.format("Lost connection. Code [%d] Reason [%s] Remote[%b]", code, reason, remote));
+	public Connection() throws URISyntaxException {
+		super(new URI(ContestBot.getInstance().getConfig("ircserver")), new Draft_6455(), null, 5000);
+		try {
+			SSLContext sslContext = SSLContext.getInstance("TLS");
+			sslContext.init(null, null, null);
+			SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+			this.setSocket(sslSocketFactory.createSocket());
+			this.setTcpNoDelay(true);
+			this.setConnectionLostTimeout(60);
+			this.getSocket().setKeepAlive(true);
+		} catch (IOException | NoSuchAlgorithmException | KeyManagementException e) {
+			Logger.getLogger(Connection.class).fatal("Can not build Socket", e);
+			System.exit(1);
+		}
+	}
 
-		        ContestBot.getInstance().reconnect();
-		        this.closed = true;
+	@Override
+	public void onClose(int code, String reason, boolean remote) {
+		synchronized (this) {
+			if (!closed) {
+				Logger.getLogger(Connection.class)
+						.warn(String.format("Lost connection. Code [%d] Reason [%s] Remote[%b]", code, reason, remote));
+
+				if (remote) {
+					ContestBot.getInstance().reconnect();
+				}
+				this.closed = true;
 			}
 		}
-    }
+	}
 
-    @Override
-    public void onError(Exception ex) {
-        Logger.getLogger(Connection.class).error(ex);
-    }
+	@Override
+	public void onError(Exception ex) {
+		Logger.getLogger(Connection.class).error(ex);
+	}
 
-    @Override
-    public void onMessage(String message) {
-        String[] messages = message.split("\r\n");
-        for (String s : messages) {
-            try {
-                if (!s.isEmpty()) {
-                    MessageParser.queueElement(s);
-                }
-            } catch (BufferOverflowException e) {
-                Logger.getLogger(Connection.class).warn(String.format("Dropped Message: %s", s), e);
-            }
-        }
-    }
+	@Override
+	public void onMessage(String message) {
+		String[] messages = message.split("\r\n");
+		for (String s : messages) {
+			try {
+				if (!s.isEmpty()) {
+					MessageParser.queueElement(s);
+				}
+			} catch (BufferOverflowException e) {
+				Logger.getLogger(Connection.class).warn(String.format("Dropped Message: %s", s), e);
+			}
+		}
+	}
 
-    @Override
-    public void onOpen(ServerHandshake handshakedata) {
-        this.send(String.format("PASS %s", ContestBot.getInstance().getConfig("oauth")));
-        this.send(String.format("NICK %s", ContestBot.getInstance().getConfig("login")));
-    }
+	@Override
+	public void onOpen(ServerHandshake handshakedata) {
+		this.send(String.format("PASS %s", ContestBot.getInstance().getConfig("oauth")));
+		this.send(String.format("NICK %s", ContestBot.getInstance().getConfig("login")));
+	}
 
-    public void sendChatMessage(String message) {
-        this.send(String.format("PRIVMSG #%s :%s", ContestBot.getInstance().getConfig("channelname"), message));
-    }
+	public void sendChatMessage(String message) {
+		this.send(String.format("PRIVMSG #%s :%s", ContestBot.getInstance().getConfig("channelname"), message));
+	}
 
-    public void sendPrivatMessage(String user, String message) {
-        this.send(String.format("PRIVMSG #%s :/w %s %s", ContestBot.getInstance().getConfig("channelname"), user,
-                message));
-    }
+	public void sendPrivatMessage(String user, String message) {
+		this.send(String.format("PRIVMSG #%s :/w %s %s", ContestBot.getInstance().getConfig("channelname"), user,
+				message));
+	}
 
-    public void sendMessage(boolean whisper, String user, String message) {
-        if (whisper) {
-            sendPrivatMessage(user, message);
-        } else {
-            sendChatMessage(message);
-        }
-    }
-    
-    @Override
-    public void send(String txt) {
-    	if (Logger.getLogger(Connection.class).isDebugEnabled()) {
-    		Logger.getLogger(Connection.class).debug(String.format("Sending Message: %s", txt));
-        }
-    	super.send(txt);
-    }
+	public void sendMessage(boolean whisper, String user, String message) {
+		if (whisper) {
+			sendPrivatMessage(user, message);
+		} else {
+			sendChatMessage(message);
+		}
+	}
+
+	@Override
+	public void send(String txt) {
+		if (Logger.getLogger(Connection.class).isDebugEnabled()) {
+			Logger.getLogger(Connection.class).debug(String.format("Sending Message: %s", txt));
+		}
+		super.send(txt);
+	}
 }
