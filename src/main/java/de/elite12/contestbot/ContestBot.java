@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.reflections.Reflections;
 
@@ -58,6 +59,8 @@ public class ContestBot {
             logger.fatal("Can not read config", e);
             System.exit(1);
         }
+        
+        Logger.getRootLogger().setLevel((Level) Level.toLevel(config.getProperty("loglevel", "INFO"), Level.INFO));
         
         this.threadPool = Executors.newFixedThreadPool(Integer.parseInt(this.config.getProperty("threads", "2")));
         for (int i = 0; i < Integer.parseInt(this.config.getProperty("threads", "2")); i++) {
