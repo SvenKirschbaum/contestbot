@@ -160,9 +160,4 @@ public class SQLite {
         stmnt.executeUpdate("DELETE FROM points");
         stmnt.close();
     }
-    
-    public void addView(Set<String> viewerset) {
-        // TODO Auto-generated method stub
-
-    }
 }
